@@ -39,8 +39,7 @@ end
 """
 	@switchlang!(lang)
 
-re-evaluate original implementation for 
-Docs.parsedoc(d::DocStr)
+Modify Docs.parsedoc(d::DocStr) to insert translation engine.
 """
 macro switchlang!(lang)
     @eval function Docs.parsedoc(d::DocStr)
