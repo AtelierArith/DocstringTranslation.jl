@@ -25,21 +25,29 @@ Currently, this package utilizes [OpenAI.jl](https://github.com/JuliaML/OpenAI.j
 
 ### Set `OPENAAI_API_KEY` environment variable
 
-Assume that you have OpenAI API Key, please set the value to an environment variable `OPENAAI_API_KEY`. If you have `.env` on the current directory and has the following format;
+To use the OpenAI API, you'll need to set your API key as an environment variable named `OPENAI_API_KEY`.
+Create a file named `.env` the current working directory. Add the following line to the `.env` file, replacing <your_api_key> with your actual API key:
 
 ```
-OPENAI_API_KEY=sk-<blah blah...>
+OPENAI_API_KEY=sk-<your_api_key>
 ```
 
-then, DotEnv package can load the `.env` file and set `OPENAAI_API_KEY` automatically. Make sure the following code does not get `ERROR: AssertionError`.
+Use the [DotEnv.jl](https://github.com/tecosaur/DotEnv.jl) package to load the environment variables from the `.env` file:
 
 ```julia
 using Pkg; Pkg.add("DotEnv")
 using DotEnv
 
-DotEnv.load!() # load API key from .env file
+DotEnv.load!()
+```
+
+To ensure the API key is set correctly, use the following Julia code:
+
+```julia
 @assert haskey(ENV, "OPENAI_API_KEY")
 ```
+
+This assertion will throw an error if the `OPENAI_API_KEY` environment variable is not defined.
 
 ## Usage
 
