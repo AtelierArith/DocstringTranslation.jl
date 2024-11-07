@@ -1,0 +1,14 @@
+name = "DocstringTranslation"
+uuid = "d404e13b-1f8e-41a5-a26a-0b758a0c6c97"
+authors = ["Satoshi Terasaki <terasakisatoshi.math@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+DotEnv = "4dc1fcf4-5e3b-5448-94ab-0c38ec0385c1"
+Markdown = "d6f4376e-aef5-505a-96c1-9c027394607a"
+OpenAI = "e9f21f70-7185-4079-aca2-91159181367c"
+
+[compat]
+DotEnv = "1.0.0"
+Markdown = "1.11.0"
+OpenAI = "0.10.0"
