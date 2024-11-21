@@ -9,7 +9,7 @@ using JSON3: JSON3
 
 export @switchlang!, @revertlang!
 
-function translate_with_openai(inp, lang; streamcallback=nothing)
+function translate_with_openai(inp::String, lang)
     model = "gpt-4o-mini"
     prompt = """
   Translate the following markdown in $(lang)
@@ -22,23 +22,38 @@ function translate_with_openai(inp, lang; streamcallback=nothing)
   Remember Just return result.
   """
     c = create_chat(
-            ENV["OPENAI_API_KEY"],
-            model,
-            [Dict("role" => "user", "content" => string(prompt))];
-            streamcallback,
+        ENV["OPENAI_API_KEY"],
+        model,
+        [Dict("role" => "user", "content" => string(prompt))];
     )
-    if isnothing(streamcallback)
-        return c.response[:choices][begin][:message][:content]
-    else
-        map(r->r["choices"][1]["delta"], c.response)
-    end
+    return c.response[:choices][begin][:message][:content]
+end
+
+function translate_with_openai_streaming(inp::String, lang)
+    model = "gpt-4o-mini"
+    prompt = """
+    Translate the following markdown in $(lang)
+
+    $(inp)
+
+    Just return result.
+
+    Note that if $(lang) represents English such as en or english, do not translate and modify anything
+    Remember Just return result.
+    """
+
+    channel = Channel()
+    task = @async create_chat(
+        ENV["OPENAI_API_KEY"],
+        model,
+        [Dict("role" => "user", "content" => string(prompt))];
+        streamcallback = (x -> put!(channel, x)),
+    )
+    channel, task
 end
 
 function translate_with_openai(md::Markdown.MD, lang)
-    buff = IOBuffer()
-    show(buff, md)
-    str = String(take!(buff))
-    translated = Markdown.parse(translate_with_openai(str, lang))
+    translated = Markdown.parse(translate_with_openai(string(md), lang))
     md.content = translated.content
     md
 end
@@ -81,12 +96,29 @@ macro switchlang!(lang)
             isempty(readme_lines) && return  # don't say we are going to print empty file
             println(io, "# Displaying contents of readme found at `$(readme_path)`")
             @info "Translating..."
-            translated_md = translate_with_openai(join(readme_lines, '\n'), string($(lang)))
-            readme_lines = split(string(translated_md), '\n')
-            for line in readme_lines # first(readme_lines, nlines)
-                println(io, line)
+            channel, _ =
+                translate_with_openai_streaming(join(readme_lines, '\n'), string($(lang)))
+            for c in channel
+                try
+                    j = JSON3.read(c[length("data: "):end])
+                    choice = j["choices"][begin]
+                    if isnothing(choice["finish_reason"])
+                        print(stdout, choice["delta"]["content"])
+                        print(io, choice["delta"]["content"])
+                    else
+                        @info "Done!"
+                        break
+                    end
+                catch e
+                    # sometimes parsing string as json fails...
+                    if e isa ArgumentError
+                        continue
+                    else
+                        rethrow()
+                    end
+                end
             end
-            # length(readme_lines) > nlines && println(io, "\n[output truncated to first $nlines lines]")
+            close(channel)
         end
     end
 end
@@ -133,7 +165,8 @@ macro revertlang!()
             for line in first(readme_lines, nlines)
                 println(io, line)
             end
-            length(readme_lines) > nlines && println(io, "\n[output truncated to first $nlines lines]")
+            length(readme_lines) > nlines &&
+                println(io, "\n[output truncated to first $nlines lines]")
         end
     end
 end
