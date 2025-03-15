@@ -30,6 +30,7 @@ function translate_with_openai(inp::String, lang)
         ENV["OPENAI_API_KEY"],
         model,
         [Dict("role" => "user", "content" => string(prompt))];
+        temperature=0.2,
     )
     content = c.response[:choices][begin][:message][:content]
     # Replace each match with the text wrapped in a math code block
@@ -50,6 +51,7 @@ function translate_with_openai_streaming(inp::String, lang)
         model,
         [Dict("role" => "user", "content" => string(prompt))];
         streamcallback = (x -> put!(channel, x)),
+        temperature=0.2,
     )
     channel, task
 end
