@@ -7,40 +7,38 @@ using Markdown: Markdown
 using OpenAI: create_chat
 using JSON3: JSON3
 
+function prompt_fn(inp::String, lang)
+    return """
+Translate the following Markdown text into $(lang):
+
+$(inp)
+
+Please note the following:
+
+- Do not translate content within code fences.
+- Do not translate text enclosed in backticks.
+- If $(lang) indicates English (e.g., "en"), output the input unchanged.
+Return only the result.
+"""
+end
+
 export @switchlang!, @revertlang!
 
 function translate_with_openai(inp::String, lang)
-    model = "gpt-4o-mini"
-    prompt = """
-  Translate the following markdown in $(lang)
-
-  $(inp)
-
-  Just return result.
-
-  Note that if $(lang) represents English such as en or english, do not translate and modify anything
-  Remember Just return result.
-  """
+    model = "gpt-4o-mini-2024-07-18"
+    prompt = prompt_fn(inp, lang)
     c = create_chat(
         ENV["OPENAI_API_KEY"],
         model,
         [Dict("role" => "user", "content" => string(prompt))];
     )
-    return c.response[:choices][begin][:message][:content]
+    content = c.response[:choices][begin][:message][:content]
+    return replace(content, raw":$" => raw"$$")
 end
 
 function translate_with_openai_streaming(inp::String, lang)
     model = "gpt-4o-mini"
-    prompt = """
-    Translate the following markdown in $(lang)
-
-    $(inp)
-
-    Just return result.
-
-    Note that if $(lang) represents English such as en or english, do not translate and modify anything
-    Remember Just return result.
-    """
+    prompt = prompt_fn(inp, lang)
 
     channel = Channel()
     task = @async create_chat(
