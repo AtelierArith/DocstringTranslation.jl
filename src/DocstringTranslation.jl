@@ -9,7 +9,7 @@ using JSON3: JSON3
 
 function prompt_fn(inp::String, lang)
     return """
-Translate the following markdown-formatted input into $(lang):
+Translate the following JuliaLang's markdown-formatted input into $(lang):
 
 $(inp)
 
