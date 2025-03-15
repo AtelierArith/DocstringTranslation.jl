@@ -9,16 +9,15 @@ using JSON3: JSON3
 
 function prompt_fn(inp::String, lang)
     return """
-Translate the following Markdown text into $(lang):
+Translate the following markdown-formatted input into $(lang):
 
 $(inp)
 
-Please note the following:
+Please note:
+- Do not alter the Julia markdown formatting.
+- If $(lang) indicates English (e.g., "en"), return the input unchanged.
 
-- Do not translate content within code fences.
-- Do not translate text enclosed in backticks.
-- If $(lang) indicates English (e.g., "en"), output the input unchanged.
-Return only the result.
+Return only the resulting text.
 """
 end
 
@@ -33,11 +32,16 @@ function translate_with_openai(inp::String, lang)
         [Dict("role" => "user", "content" => string(prompt))];
     )
     content = c.response[:choices][begin][:message][:content]
-    return replace(content, raw":$" => raw"$$")
+    # Replace each match with the text wrapped in a math code block
+    return replace(
+        content, 
+        r"\:\$(.*?)\:\$"s => s"```math\n\1\n```",
+        r"\$\$(.*?)\$\$"s => s"```math\n\1\n```"
+        )
 end
 
 function translate_with_openai_streaming(inp::String, lang)
-    model = "gpt-4o-mini"
+    model = "gpt-4o-mini-2024-07-18"
     prompt = prompt_fn(inp, lang)
 
     channel = Channel()
