@@ -24,6 +24,15 @@ end
 
 export @switchlang!, @revertlang!
 
+function postprocess_docstr(content)
+    # Replace each match with the text wrapped in a math code block
+    return replace(
+        content, 
+        r"\:\$(.*?)\:\$"s => s"```math\n\1\n```",
+        r"\$\$(.*?)\$\$"s => s"```math\n\1\n```"
+        )
+end
+
 function translate_with_openai(inp::String, lang)
     model = "gpt-4o-mini-2024-07-18"
     prompt = prompt_fn(inp, lang)
@@ -34,12 +43,7 @@ function translate_with_openai(inp::String, lang)
         temperature=0.1,
     )
     content = c.response[:choices][begin][:message][:content]
-    # Replace each match with the text wrapped in a math code block
-    return replace(
-        content, 
-        r"\:\$(.*?)\:\$"s => s"```math\n\1\n```",
-        r"\$\$(.*?)\$\$"s => s"```math\n\1\n```"
-        )
+    return postprocess_docstr(content)
 end
 
 function translate_with_openai_streaming(inp::String, lang)
