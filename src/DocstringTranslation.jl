@@ -16,6 +16,10 @@ $(inp)
 Please note:
 - Do not alter the Julia markdown formatting.
 - Do not change code fence such as jldoctest or math.
+- Do not change words in the form of
+>
+> [xxx](@ref)
+> 
 - If $(lang) indicates English (e.g., "en"), return the input unchanged.
 
 Return only the resulting text.
