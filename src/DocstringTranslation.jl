@@ -45,7 +45,7 @@ function postprocess_content(content)
 end
 
 function translate_with_openai(
-    doc::Union{Markdown.MD, AbstractString},
+    doc::Union{Markdown.MD, AbstractString};
     lang::String = default_lang(),
     model::String = default_model(),
     system_promptfn = default_system_promptfn,
@@ -65,7 +65,7 @@ function translate_with_openai(
 end
 
 function translate_with_openai_streaming(
-    doc::Union{Markdown.MD, AbstractString},
+    doc::Union{Markdown.MD, AbstractString};
     lang::String = default_lang(),
     model::String = default_model(),
     system_promptfn = default_system_promptfn,
