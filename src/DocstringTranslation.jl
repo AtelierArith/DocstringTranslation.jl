@@ -7,11 +7,20 @@ using Markdown: Markdown
 using OpenAI: create_chat
 using JSON3: JSON3
 
-function prompt_fn(inp::String, lang)
-    return """
-Translate the following JuliaLang's markdown-formatted input into $(lang):
+const DEFAULT_MODEL = Ref{String}("gpt-4o-mini-2024-07-18")
+const DEFAULT_LANG = Ref{String}("English")
 
-$(inp)
+function default_model()
+    return DEFAULT_MODEL[]
+end
+
+function default_lang()
+    return DEFAULT_LANG[]
+end
+
+function default_system_promptfn(lang=default_lang())
+    return """
+Translate the Markdown content I'll paste later into $(lang).
 
 Please note:
 - Do not alter the Julia markdown formatting.
@@ -26,7 +35,7 @@ end
 
 export @switchlang!, @revertlang!
 
-function postprocess_docstr(content)
+function postprocess_content(content)
     # Replace each match with the text wrapped in a math code block
     return replace(
         content, 
@@ -35,28 +44,40 @@ function postprocess_docstr(content)
         )
 end
 
-function translate_with_openai(inp::String, lang)
-    model = "gpt-4o-mini-2024-07-18"
-    prompt = prompt_fn(inp, lang)
+function translate_with_openai(
+    doc::Union{Markdown.MD, AbstractString},
+    lang::String = default_lang(),
+    model::String = default_model(),
+    system_promptfn = default_system_promptfn,
+)
     c = create_chat(
         ENV["OPENAI_API_KEY"],
         model,
-        [Dict("role" => "user", "content" => string(prompt))];
+        [
+            Dict("role" => "system", "content" => system_promptfn(lang)),
+            Dict("role" => "user", "content" => string(doc)),
+        ];
         temperature=0.1,
     )
     content = c.response[:choices][begin][:message][:content]
-    return postprocess_docstr(content)
+    content = postprocess_content(content)
+    return Markdown.parse(content)
 end
 
-function translate_with_openai_streaming(inp::String, lang)
-    model = "gpt-4o-mini-2024-07-18"
-    prompt = prompt_fn(inp, lang)
-
+function translate_with_openai_streaming(
+    doc::Union{Markdown.MD, AbstractString},
+    lang::String = default_lang(),
+    model::String = default_model(),
+    system_promptfn = default_system_promptfn,
+)
     channel = Channel()
     task = @async create_chat(
         ENV["OPENAI_API_KEY"],
         model,
-        [Dict("role" => "user", "content" => string(prompt))];
+        [
+            Dict("role" => "system", "content" => system_promptfn(lang)),
+            Dict("role" => "user", "content" => string(doc)),
+        ];
         streamcallback = (x -> put!(channel, x)),
         temperature=0.1,
     )
@@ -69,12 +90,22 @@ function translate_with_openai(md::Markdown.MD, lang)
     md
 end
 
+function switchlang!(lang::Union{String,Symbol})
+    DEFAULT_LANG[] = String(lang)
+end
+
+function switchlang!(node::QuoteNode)
+    lang = node.value
+    switchlang!(lang)
+end
+
 """
 	@switchlang!(lang)
 
 Modify Docs.parsedoc(d::DocStr) to insert translation engine.
 """
 macro switchlang!(lang)
+    switchlang!(lang)
     @eval function Docs.parsedoc(d::DocStr)
         if d.object === nothing
             md = Docs.formatdoc(d)
@@ -82,7 +113,7 @@ macro switchlang!(lang)
             md.meta[:path] = d.data[:path]
             d.object = md
         end
-        translate_with_openai(d.object, string($(lang)))
+        translate_with_openai(d.object)
     end
 
     @eval function REPL.summarize(io::IO, m::Module, binding::Binding; nlines::Int = 200)
@@ -108,7 +139,7 @@ macro switchlang!(lang)
             println(io, "# Displaying contents of readme found at `$(readme_path)`")
             @info "Translating..."
             channel, _ =
-                translate_with_openai_streaming(join(readme_lines, '\n'), string($(lang)))
+                translate_with_openai_streaming(join(readme_lines, '\n'))
             for c in channel
                 try
                     j = JSON3.read(c[length("data: "):end])
@@ -134,6 +165,10 @@ macro switchlang!(lang)
     end
 end
 
+function revertlang!()
+    DEFAULT_LANG[] = "English"
+end
+
 """
 	@revertlang!
 
@@ -141,7 +176,7 @@ re-evaluate original implementation for
 Docs.parsedoc(d::DocStr)
 """
 macro revertlang!()
-
+    revertlang!("English")
     @eval function Docs.parsedoc(d::DocStr)
         if d.object === nothing
             md = Docs.formatdoc(d)
