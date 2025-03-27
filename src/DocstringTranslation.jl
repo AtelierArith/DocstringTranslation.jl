@@ -35,11 +35,11 @@ end
 
 export @switchlang!, @revertlang!
 
-function postprocess_content(content)
+function postprocess_content(content::AbstractString)
     # Replace each match with the text wrapped in a math code block
     return replace(
         content, 
-        r"\:\$(.*?)\:\$"s => s"```math\n\1\n```",
+        r":\$(.*?):\$"s => s"```math\n\1\n```",
         r"\$\$(.*?)\$\$"s => s"```math\n\1\n```"
         )
 end
@@ -57,7 +57,7 @@ function translate_with_openai(
             Dict("role" => "system", "content" => system_promptfn(lang)),
             Dict("role" => "user", "content" => string(doc)),
         ];
-        temperature=0.1,
+        temperature=0,
     )
     content = c.response[:choices][begin][:message][:content]
     content = postprocess_content(content)
@@ -79,7 +79,7 @@ function translate_with_openai_streaming(
             Dict("role" => "user", "content" => string(doc)),
         ];
         streamcallback = (x -> put!(channel, x)),
-        temperature=0.1,
+        temperature=0,
     )
     channel, task
 end
