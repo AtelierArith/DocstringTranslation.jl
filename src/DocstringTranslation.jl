@@ -94,18 +94,12 @@ function switchlang!(lang::Union{String,Symbol})
     DEFAULT_LANG[] = String(lang)
 end
 
-function switchlang!(node::QuoteNode)
-    lang = node.value
-    switchlang!(lang)
-end
-
 """
 	@switchlang!(lang)
 
 Modify Docs.parsedoc(d::DocStr) to insert translation engine.
 """
 macro switchlang!(lang)
-    switchlang!(lang)
     @eval function Docs.parsedoc(d::DocStr)
         if d.object === nothing
             md = Docs.formatdoc(d)
@@ -162,6 +156,10 @@ macro switchlang!(lang)
             end
             close(channel)
         end
+    end
+    quote
+        local val = $(esc(lang))
+        switchlang!(val)
     end
 end
 
