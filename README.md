@@ -126,3 +126,35 @@ search: ℯ
 
 julia>
 ```
+
+## Appendix
+
+If you are using 1PassWord, `op` command is good for you. Store the following content instead of writing API key directly:
+
+```
+# .env
+OPENAI_API_KEY=op://Personal/OpenAI API Key/api key
+```
+
+To launch `julia` run the following command:
+
+```sh
+$ op run --env-file=./.env -- julia
+```
+
+In this case, you don't have to load DotEnv package:
+
+```julia
+               _
+   _       _ _(_)_     |  Documentation: https://docs.julialang.org
+  (_)     | (_) (_)    |
+   _ _   _| |_  __ _   |  Type "?" for help, "]?" for Pkg help.
+  | | | | | | |/ _` |  |
+  | | |_| | | | (_| |  |  Version 1.11.5 (2025-04-14)
+ _/ |\__'_|_|_|\__'_|  |  Official https://julialang.org/ release
+|__/                   |
+
+julia> using DocstringTranslation; @switchlang! :Japanese; @doc exp
+
+```
+
