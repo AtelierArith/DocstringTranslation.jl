@@ -103,11 +103,12 @@ macro switchlang!(lang)
     @eval function Docs.parsedoc(d::DocStr)
         if d.object === nothing
             md = Docs.formatdoc(d)
+            md = translate_with_openai(md)
             md.meta[:module] = d.data[:module]
             md.meta[:path] = d.data[:path]
             d.object = md
         end
-        translate_with_openai(d.object)
+        d.object
     end
 
     @eval function REPL.summarize(io::IO, m::Module, binding::Binding; nlines::Int = 200)
