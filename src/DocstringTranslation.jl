@@ -1,219 +1,38 @@
 module DocstringTranslation
 
-using Base.Docs: DocStr, Binding
-using REPL: find_readme
-import REPL
-using Markdown: Markdown
-using OpenAI: create_chat
-using JSON3: JSON3
+using Base.Docs: DocStr
 
-const DEFAULT_MODEL = Ref{String}("gpt-4o-mini-2024-07-18")
-const DEFAULT_LANG = Ref{String}("English")
+using SHA
+using Markdown
 
-function default_model()
-    return DEFAULT_MODEL[]
+using Scratch
+import Documenter
+
+using OpenAI
+
+const DEFAULT_LANG = Ref{String}()
+const TRANSLATION_CACHE_DIR = Ref{String}()
+const DOCUMENTER_TARGET_PACKAGE = Ref{String}()
+
+function switchtranslationdir!(dir::AbstrstractString)
+    TRANSLATION_CACHE_DIR[] = dir
 end
 
-function default_lang()
-    return DEFAULT_LANG[]
+function switchtargetpackage!(pkg)
+    DOCUMENTER_TARGET_PACKAGE[] = string(pkg)
 end
 
-function default_system_promptfn(lang=default_lang())
-    return """
-Translate the Markdown content I'll paste later into $(lang).
+include("util.jl")
+include("scratchspace.jl")
+include("openai.jl")
 
-Please note:
-- Do not alter the Julia markdown formatting.
-- Do not change code fence such as jldoctest or math.
-- Do not change words in the form of `[xxx](@ref)`.
-- Do not change any URL.
-- If $(lang) indicates English (e.g., "en"), return the input unchanged.
+include("switchlang.jl")
+export @switchlang!
 
-Return only the resulting text.
-"""
-end
-
-export @switchlang!, @revertlang!
-
-function postprocess_content(content::AbstractString)
-    # Replace each match with the text wrapped in a math code block
-    return replace(
-        content, 
-        r":\$(.*?):\$"s => s"```math\1```",
-        r"\$\$(.*?)\$\$"s => s"```math\1```"
-        )
-end
-
-function translate_with_openai(
-    doc::Union{Markdown.MD, AbstractString};
-    lang::String = default_lang(),
-    model::String = default_model(),
-    system_promptfn = default_system_promptfn,
-)
-    c = create_chat(
-        ENV["OPENAI_API_KEY"],
-        model,
-        [
-            Dict("role" => "system", "content" => system_promptfn(lang)),
-            Dict("role" => "user", "content" => string(doc)),
-        ];
-        temperature=0,
-    )
-    content = c.response[:choices][begin][:message][:content]
-    content = postprocess_content(content)
-    return Markdown.parse(content)
-end
-
-function translate_with_openai_streaming(
-    doc::Union{Markdown.MD, AbstractString};
-    lang::String = default_lang(),
-    model::String = default_model(),
-    system_promptfn = default_system_promptfn,
-)
-    channel = Channel()
-    task = @async create_chat(
-        ENV["OPENAI_API_KEY"],
-        model,
-        [
-            Dict("role" => "system", "content" => system_promptfn(lang)),
-            Dict("role" => "user", "content" => string(doc)),
-        ];
-        streamcallback = (x -> put!(channel, x)),
-        temperature=0,
-    )
-    channel, task
-end
-
-function translate_with_openai(md::Markdown.MD, lang)
-    translated = Markdown.parse(translate_with_openai(string(md), lang))
-    md.content = translated.content
-    md
-end
-
-function switchlang!(lang::Union{String,Symbol})
-    DEFAULT_LANG[] = String(lang)
-end
-
-"""
-	@switchlang!(lang)
-
-Modify Docs.parsedoc(d::DocStr) to insert translation engine.
-"""
-macro switchlang!(lang)
-    @eval function Docs.parsedoc(d::DocStr)
-        if d.object === nothing
-            md = Docs.formatdoc(d)
-            md = translate_with_openai(md)
-            md.meta[:module] = d.data[:module]
-            md.meta[:path] = d.data[:path]
-            d.object = md
-        end
-        d.object
-    end
-
-    @eval function REPL.summarize(io::IO, m::Module, binding::Binding; nlines::Int = 200)
-        readme_path = find_readme(m)
-        public = Base.ispublic(binding.mod, binding.var) ? "public" : "internal"
-        if isnothing(readme_path)
-            println(io, "No docstring or readme file found for $public module `$m`.\n")
-        else
-            println(io, "No docstring found for $public module `$m`.")
-        end
-        exports = filter!(!=(nameof(m)), names(m))
-        if isempty(exports)
-            println(io, "Module does not have any public names.")
-        else
-            println(io, "# Public names")
-            print(io, "  `")
-            join(io, exports, "`, `")
-            println(io, "`\n")
-        end
-        if !isnothing(readme_path)
-            readme_lines = readlines(readme_path)
-            isempty(readme_lines) && return  # don't say we are going to print empty file
-            println(io, "# Displaying contents of readme found at `$(readme_path)`")
-            @info "Translating..."
-            channel, _ =
-                translate_with_openai_streaming(join(readme_lines, '\n'))
-            for c in channel
-                try
-                    j = JSON3.read(c[length("data: "):end])
-                    choice = j["choices"][begin]
-                    if isnothing(choice["finish_reason"])
-                        print(stdout, choice["delta"]["content"])
-                        print(io, choice["delta"]["content"])
-                    else
-                        @info "Done!"
-                        break
-                    end
-                catch e
-                    # sometimes parsing string as json fails...
-                    if e isa ArgumentError
-                        continue
-                    else
-                        rethrow()
-                    end
-                end
-            end
-            close(channel)
-        end
-    end
-    quote
-        local val = $(esc(lang))
-        switchlang!(val)
-    end
-end
-
-function revertlang!()
-    DEFAULT_LANG[] = "English"
-end
-
-"""
-	@revertlang!
-
-re-evaluate original implementation for 
-Docs.parsedoc(d::DocStr)
-"""
-macro revertlang!()
-    revertlang!("English")
-    @eval function Docs.parsedoc(d::DocStr)
-        if d.object === nothing
-            md = Docs.formatdoc(d)
-            md.meta[:module] = d.data[:module]
-            md.meta[:path] = d.data[:path]
-            d.object = md
-        end
-        d.object
-    end
-
-    @eval function REPL.summarize(io::IO, m::Module, binding::Binding; nlines::Int = 200)
-        readme_path = find_readme(m)
-        public = Base.ispublic(binding.mod, binding.var) ? "public" : "internal"
-        if isnothing(readme_path)
-            println(io, "No docstring or readme file found for $public module `$m`.\n")
-        else
-            println(io, "No docstring found for $public module `$m`.")
-        end
-        exports = filter!(!=(nameof(m)), names(m))
-        if isempty(exports)
-            println(io, "Module does not have any public names.")
-        else
-            println(io, "# Public names")
-            print(io, "  `")
-            join(io, exports, "`, `")
-            println(io, "`\n")
-        end
-        if !isnothing(readme_path)
-            readme_lines = readlines(readme_path)
-            isempty(readme_lines) && return  # don't say we are going to print empty file
-            println(io, "# Displaying contents of readme found at `$(readme_path)`")
-            for line in first(readme_lines, nlines)
-                println(io, line)
-            end
-            length(readme_lines) > nlines &&
-                println(io, "\n[output truncated to first $nlines lines]")
-        end
-    end
+function __init__()
+    scratch_name = "translation"
+    DOCUMENTER_TARGET_PACKAGE[] = "julia"
+    global TRANSLATION_CACHE_DIR[] = @get_scratch!(scratch_name)
 end
 
 end # module DocstringTranslation

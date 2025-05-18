@@ -1,0 +1,4 @@
+using ReTestItems
+using DocstringTranslation
+
+ReTestItems.runtests(DocstringTranslation)
