@@ -11,9 +11,9 @@ SHA = "ea8e919c-243c-51af-8825-aaa63cd721ce"
 Scratch = "6c6a2e73-6563-6170-7368-637461726353"
 
 [compat]
-Aqua = "0.8.12"
+Aqua = "0.8"
 Documenter = "1"
-JET = "0.9.19"
+JET = "0.9"
 Markdown = "1"
 OpenAI = "0.10.1"
 ReTestItems = "1.31.0"
@@ -30,4 +30,3 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Aqua", "JET", "ReTestItems", "Test"]
-
