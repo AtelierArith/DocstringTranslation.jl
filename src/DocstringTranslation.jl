@@ -14,7 +14,7 @@ const DEFAULT_LANG = Ref{String}()
 const TRANSLATION_CACHE_DIR = Ref{String}()
 const DOCUMENTER_TARGET_PACKAGE = Ref{String}()
 
-function switchtranslationdir!(dir::AbstrstractString)
+function switchtranslationdir!(dir::AbstractString)
     TRANSLATION_CACHE_DIR[] = dir
 end
 
