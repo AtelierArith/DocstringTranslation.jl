@@ -1,5 +1,7 @@
 # DocstringTranslation.jl
 
+[![CI](https://github.com/AtelierArith/DocstringTranslation.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/AtelierArith/DocstringTranslation.jl/actions/workflows/CI.yml)
+
 ## Description
 
 This Julia package inserts Large Language Model (LLM) hooks into the API in the Base.Docs module, giving non-English speaking users the opportunity to help smooth API comprehension.
