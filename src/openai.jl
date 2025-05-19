@@ -38,6 +38,8 @@ Translate the Markdown content or text I'll paste later into $(lang).
 You must strictly follow the rules below.
 
 - Do not alter the Markdown formatting.
+- Skip changing words in the form of `[xxx](@ref)` or `[xxx](@ref yyy)`.
+- Do not change any URL.
 - Return only the resulting text.
 """
 end

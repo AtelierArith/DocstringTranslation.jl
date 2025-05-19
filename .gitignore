@@ -1,2 +1,5 @@
 .env
 .envrc
+
+docs/build
+Manifest.toml
