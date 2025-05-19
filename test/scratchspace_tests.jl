@@ -35,4 +35,34 @@
             @test result.patch == 0
         end
     end # prevminor
+
+    @testset "insertversion" begin
+        @testset "insertversion adds version string at index 2" begin
+            svec = ["a", "b", "c"]
+            v = VersionNumber(1, 2, 3)
+            result = DocstringTranslation.insertversion(svec, v)
+            @test result == ["a", "1.2", "b", "c"]
+        end
+
+        @testset "insertversion works with empty vector" begin
+            svec = String[]
+            v = VersionNumber(2, 3, 4)
+            @test_throws BoundsError DocstringTranslation.insertversion(svec, v)
+        end
+
+        @testset "insertversion preserves original vector" begin
+            svec = ["x", "y", "z"]
+            v = VersionNumber(3, 4, 5)
+            result = DocstringTranslation.insertversion(svec, v)
+            @test svec == ["x", "y", "z"]  # Original vector should be unchanged
+            @test result == ["x", "3.4", "y", "z"]
+        end
+
+        @testset "insertversion handles single element vector" begin
+            svec = ["single"]
+            v = VersionNumber(4, 5, 6)
+            result = DocstringTranslation.insertversion(svec, v)
+            @test result == ["single", "4.5"]
+        end
+    end # insertversion
 end # testitem "scratchspace"
