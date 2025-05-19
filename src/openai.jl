@@ -138,6 +138,21 @@ function _translate!(c)
     c
 end
 
+"""
+    translate_md!(md::Markdown.MD)
+
+Translate a Markdown document in-place using OpenAI translation.
+
+# Arguments
+- `md::Markdown.MD`: The Markdown document to translate
+
+# Returns
+The translated Markdown document (same object as input)
+
+# Details
+Recursively translates all content in the Markdown document using multiple threads.
+Translation is done in-place, modifying the original document.
+"""
 function translate_md!(md::Markdown.MD)
     Base.Threads.@threads for c in md.content
         _translate!(c)
