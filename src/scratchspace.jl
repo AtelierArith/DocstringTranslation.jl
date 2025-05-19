@@ -1,5 +1,5 @@
 function prevminor(v::VersionNumber)
-    return VersionNumber(v.major, v.minor - 1, 0)
+    return VersionNumber(v.major, max(0, v.minor - 1), 0)
 end
 
 function insertversion(svec::AbstractVector, v::VersionNumber)
