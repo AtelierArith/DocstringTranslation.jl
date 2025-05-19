@@ -3,8 +3,27 @@
 
 Return a `VersionNumber` with the same major version as `v`, but with minor version decremented by 1
 (bounded at 0) and patch version set to 0.
+"""
+function prevminor(v::VersionNumber)
+    return VersionNumber(v.major, max(0, v.minor - 1), 0)
+end
 
-# Examples
+
+"""
+    insertversion(svec::AbstractVector, v::VersionNumber)
+
+Insert a version string into a copy of the given vector at the second position.
+
+# Arguments
+- `svec::AbstractVector`: The vector into which the version string will be inserted.
+- `v::VersionNumber`: The version number used to create the version string.
+
+# Returns
+A new vector with the version string inserted at the second position.
+
+# Details
+The function creates a deep copy of the input vector `svec` and inserts a string
+representation of the version number `v` in the format "major.minor" at the second position.
 """
 function insertversion(svec::AbstractVector, v::VersionNumber)
     major = v.major
