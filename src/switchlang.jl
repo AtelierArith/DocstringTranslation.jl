@@ -66,7 +66,7 @@ macro switchlang!(lang)
         mdsrc = replace(read(source, String), '\r' => "")
         mdpage = Markdown.parse(mdsrc)
         begin # hack
-            target_package = DOCUMENTER_TARGET_PACKAGE[]
+            target_package = DOCUMENTER_TARGET_PACKAGE[][:name]
             mdpage.meta[:path] = joinpath(target_package, first(splitext(source)))
             cache_original(mdpage)
             @debug "Translating ..." mdpage

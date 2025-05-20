@@ -70,7 +70,7 @@ function pathofcachedir(md::Markdown.MD, allowold::Bool = false)
         # In case the module is not set.
         # This happens when we translate markdown in doc/src/<blah>.md
         svec = splitpath(md.meta[:path])
-        v = VERSION
+        v = DOCUMENTER_TARGET_PACKAGE[][:version]
         svec_with_version = insertversion(svec, v)
         d = joinpath(TRANSLATION_CACHE_DIR[], svec_with_version...)
         if !isdir(d) && allowold
