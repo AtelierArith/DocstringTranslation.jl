@@ -35,6 +35,7 @@ If `make -C doc` works successfully on your machine (meaning you can build the J
 ### Update `julia/doc/make.jl`
 
 ja: 下記のパッチを `julia/doc/make.jl` に適用します． Julia 1.11.5 で動作を確認しています．
+
 en: Apply the following patch to `julia/doc/make.jl`. This has been tested with Julia 1.11.5.
 
 ```diff
@@ -419,6 +420,7 @@ index 76bdc332ff..fb4d338cd1 100644
 
 ja: 翻訳結果が事前に用意されていれば　`julia` と同階層に `translation` を配置します．
 もし，用意できない場合は OpenAI API キーを用意し環境変数 `OPENAI_API_KEY` を設定しておきます．
+
 en: If you have pre-prepared translation results, place the `translation` directory at the same level as `julia`.
 If you don't have them ready, prepare an OpenAI API key and set it as the environment variable `OPENAI_API_KEY`.
 
