@@ -100,17 +100,14 @@ julia> @switchlang! :German
 julia> # You can also ask from help mode
 
 help?> ℯ
-"ℯ" can be typed by \euler<tab>
-
-search: ℯ
-
+julia> @doc ℯ
   ℯ
   e
 
   Die Konstante ℯ.
 
-  Das Unicode-Zeichen ℯ kann getippt werden, indem man \euler schreibt
-  und Tab im Julia REPL, und in vielen Editoren drückt.
+  Unicode ℯ kann eingegeben werden, indem man \euler schreibt und die
+  Tabulatortaste im Julia REPL und in vielen Editoren drückt.
 
   Siehe auch: exp, cis, cispi.
 
