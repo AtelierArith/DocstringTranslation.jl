@@ -25,7 +25,7 @@ Currently, this package utilizes [OpenAI.jl](https://github.com/JuliaML/OpenAI.j
 ](https://platform.openai.com/docs/quickstart)
 - [Where do I find my OpenAI API Key?](https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key)
 
-### Set `OPENAAI_API_KEY` environment variable
+### Set `OPENAI_API_KEY` environment variable
 
 To use the OpenAI API, you'll need to set your API key as an environment variable named `OPENAI_API_KEY`.
 Create a file named `.env` the current working directory. Add the following line to the `.env` file, replacing <your_api_key> with your actual API key:
