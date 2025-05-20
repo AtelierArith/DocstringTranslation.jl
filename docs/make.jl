@@ -14,7 +14,9 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-	"API" => "api.md",
+        "Caching translated docstrings" => "caching.md",
+        "Translation of Julia's official documentation" => "julia_documentation.md",
+    	"API" => "api.md",
     ],
 )
 
