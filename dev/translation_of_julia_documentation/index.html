@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Translation of Julia&#39;s official documentation · DocstringTranslation.jl</title><meta name="title" content="Translation of Julia&#39;s official documentation · DocstringTranslation.jl"/><meta property="og:title" content="Translation of Julia&#39;s official documentation · DocstringTranslation.jl"/><meta property="twitter:title" content="Translation of Julia&#39;s official documentation · DocstringTranslation.jl"/><meta name="description" content="Documentation for DocstringTranslation.jl."/><meta property="og:description" content="Documentation for DocstringTranslation.jl."/><meta property="twitter:description" content="Documentation for DocstringTranslation.jl."/><meta property="og:url" content="https://atelierarith.github.io/DocstringTranslation.jl/translation_of_julia_documentation/"/><meta property="twitter:url" content="https://atelierarith.github.io/DocstringTranslation.jl/translation_of_julia_documentation/"/><link rel="canonical" href="https://atelierarith.github.io/DocstringTranslation.jl/translation_of_julia_documentation/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">DocstringTranslation.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../caching/">Caching translated docstrings</a></li><li><a class="tocitem" href="../how_it_works/">How it works</a></li><li class="is-active"><a class="tocitem" href>Translation of Julia&#39;s official documentation</a><ul class="internal"><li><a class="tocitem" href="#概要"><span>概要</span></a></li><li><a class="tocitem" href="#Description"><span>Description</span></a></li><li><a class="tocitem" href="#How-to-translate-Julia-documentation"><span>How to translate Julia documentation</span></a></li></ul></li><li><a class="tocitem" href="../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Translation of Julia&#39;s official documentation</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Translation of Julia&#39;s official documentation</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/AtelierArith/DocstringTranslation.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/AtelierArith/DocstringTranslation.jl/blob/main/docs/src/translation_of_julia_documentation.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Translation-of-Julia-documentation"><a class="docs-heading-anchor" href="#Translation-of-Julia-documentation">Translation of Julia documentation</a><a id="Translation-of-Julia-documentation-1"></a><a class="docs-heading-anchor-permalink" href="#Translation-of-Julia-documentation" title="Permalink"></a></h1><h2 id="概要"><a class="docs-heading-anchor" href="#概要">概要</a><a id="概要-1"></a><a class="docs-heading-anchor-permalink" href="#概要" title="Permalink"></a></h2><p>English follows Japanese How it works でも述べたとおり，我々のパッケージは既存のメソッドをオーバーライドすることで翻訳エンジンを挿入し，翻訳されたマークダウンの出力をユーザに提供することができます．Julia のドキュメント，そして多くのサードパーティのパッケージは Documenter.jl とマークダウンのエコシステムを元に構築されています．この状況を利用し，英語で書かれた Julia 公式ドキュメント，サードパーティのパッケージのドキュメント を別の自然言語に翻訳することができます．マークダウンフォーマットのファイルがどのタイミングで読み込まれるかを把握し，そのタイミングをコントロールする関数・メソッドに翻訳エンジンを挿入する必要がありますが，この要件はすでに <code>@switchlang!</code> マクロが解決しています．</p><hr/><h2 id="Description"><a class="docs-heading-anchor" href="#Description">Description</a><a id="Description-1"></a><a class="docs-heading-anchor-permalink" href="#Description" title="Permalink"></a></h2><p>As mentioned in &quot;How it works&quot;, our package can insert a translation engine by overriding existing methods to provide users with translated markdown output. Julia&#39;s documentation and many third-party packages are built on the Documenter.jl and markdown ecosystem. Taking advantage of this situation, we can translate Julia&#39;s official documentation and third-party package documentation written in English into other natural languages. While we need to understand when markdown format files are loaded and insert translation engines into functions and methods that control this timing, this requirement has already been solved by the <code>@switchlang!</code> macro.</p><h2 id="How-to-translate-Julia-documentation"><a class="docs-heading-anchor" href="#How-to-translate-Julia-documentation">How to translate Julia documentation</a><a id="How-to-translate-Julia-documentation-1"></a><a class="docs-heading-anchor-permalink" href="#How-to-translate-Julia-documentation" title="Permalink"></a></h2><h3 id="Build-Julia-from-source"><a class="docs-heading-anchor" href="#Build-Julia-from-source">Build Julia from source</a><a id="Build-Julia-from-source-1"></a><a class="docs-heading-anchor-permalink" href="#Build-Julia-from-source" title="Permalink"></a></h3><p>ja: Julia の公式ドキュメントを完全にビルドし，翻訳を実行するには（juliaup などで導入した Julia を使わずに） Julia 自信をビルドする必要があります．したがって，翻訳の前に下記のコマンドがローカル環境で実行できるかを確認してください．</p><p>en: To fully build and translate Julia&#39;s official documentation, you need to build Julia itself (rather than using Julia installed via juliaup etc.). Therefore, before proceeding with translation, please verify that the following commands can be executed in your local environment.</p><pre><code class="language-sh hljs">$ git clone https://github.com/JuliaLang/julia.git
+$ cd julia
+$ make
+$ make -C doc</code></pre><p>If <code>make -C doc</code> works successfully on your machine (meaning you can build the Julia documentation), you can proceed to the next section. If you encounter any errors, make sure you have all the required dependencies installed and your build environment is properly configured.</p><h3 id="Update-julia/doc/make.jl"><a class="docs-heading-anchor" href="#Update-julia/doc/make.jl">Update <code>julia/doc/make.jl</code></a><a id="Update-julia/doc/make.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Update-julia/doc/make.jl" title="Permalink"></a></h3><p>ja: 下記のパッチを <code>julia/doc/make.jl</code> に適用します． Julia 1.11.5 で動作を確認しています． en: Apply the following patch to <code>julia/doc/make.jl</code>. This has been tested with Julia 1.11.5.</p><pre><code class="language-diff hljs">diff --git a/doc/make.jl b/doc/make.jl
+index e8ccbad85c..a3f89f608b 100644
+--- a/doc/make.jl
++++ b/doc/make.jl
+@@ -9,6 +9,27 @@ using Pkg
+ Pkg.instantiate()
+
+ using Documenter
++
++# using DotEnv; DotEnv.load!()
++
++using DocstringTranslation
++DocstringTranslation.switchtranslationcachedir!(joinpath(dirname(dirname(@__DIR__)), &quot;translation&quot;))
++DocstringTranslation.switchtargetpackage!(&quot;julia&quot;)
++
++lang = &quot;ja&quot; # choose your favorite language
++@switchlang! lang
++
++for (i, _stdlib) in enumerate(readdir(Sys.STDLIB))
++    stdlib = Symbol(_stdlib)
++    @info &quot;Translating docstrings in $(stdlib)&quot;
++    @eval begin
++        import $(stdlib)
++        Base.Threads.@threads for n in names($(stdlib))
++            (Base.Docs.doc)((Base.Docs.Binding)($(stdlib), n))
++        end
++    end
++end
++
+ import LibGit2
+
+ baremodule GenStdLib end
+@@ -222,6 +243,7 @@ DevDocs = [
+         &quot;devdocs/aot.md&quot;,
+         &quot;devdocs/gc-sa.md&quot;,
+         &quot;devdocs/gc.md&quot;,
++        #&quot;devdocs/gc-mmtk.md&quot;,
+         &quot;devdocs/jit.md&quot;,
+         &quot;devdocs/builtins.md&quot;,
+         &quot;devdocs/precompile_hang.md&quot;,
+@@ -241,6 +263,7 @@ DevDocs = [
+         &quot;devdocs/build/windows.md&quot;,
+         &quot;devdocs/build/freebsd.md&quot;,
+         &quot;devdocs/build/arm.md&quot;,
++        #&quot;devdocs/build/riscv.md&quot;,
+         &quot;devdocs/build/distributing.md&quot;,
+     ]
+ ]
+@@ -363,13 +386,13 @@ else
+     )
+ end
+
+-const output_path = joinpath(buildroot, &quot;doc&quot;, &quot;_build&quot;, (render_pdf ? &quot;pdf&quot; : &quot;html&quot;), &quot;en&quot;)
++const output_path = joinpath(buildroot, &quot;doc&quot;, &quot;_build&quot;, (render_pdf ? &quot;pdf&quot; : &quot;html&quot;), lang)
+ makedocs(
+     build     = output_path,
+     modules   = [Main, Base, Core, [Base.root_module(Base, stdlib.stdlib) for stdlib in STDLIB_DOCS]...],
+     clean     = true,
+-    doctest   = (&quot;doctest=fix&quot; in ARGS) ? (:fix) : (&quot;doctest=only&quot; in ARGS) ? (:only) : (&quot;doctest=true&quot; in ARGS) ? true : false,
+-    linkcheck = &quot;linkcheck=true&quot; in ARGS,
++    doctest   = false,
++    linkcheck = false,
+     linkcheck_ignore = [&quot;https://bugs.kde.org/show_bug.cgi?id=136779&quot;], # fails to load from nanosoldier?
+     checkdocs = :none,
+     format    = format,
+@@ -377,6 +400,7 @@ makedocs(
+     authors   = &quot;The Julia Project&quot;,
+     pages     = PAGES,
+     remotes   = documenter_stdlib_remotes,
++    warnonly = [:cross_references, :footnote, :eval_block]
+ )
+
+ # Update URLs to external stdlibs (JuliaLang/julia#43199)
+@@ -464,8 +488,8 @@ if &quot;deploy&quot; in ARGS
+     deploydocs(
+         repo = &quot;github.com/JuliaLang/docs.julialang.org.git&quot;,
+         deploy_config = BuildBotConfig(),
+-        target = joinpath(buildroot, &quot;doc&quot;, &quot;_build&quot;, &quot;html&quot;, &quot;en&quot;),
+-        dirname = &quot;en&quot;,
++        target = joinpath(buildroot, &quot;doc&quot;, &quot;_build&quot;, &quot;html&quot;, lang),
++        dirname = lang,
+         devurl = devurl,
+         versions = Versions([&quot;v#.#&quot;, devurl =&gt; devurl]),
+         archive = get(ENV, &quot;DOCUMENTER_ARCHIVE&quot;, nothing),</code></pre><h3 id="Update-julia/doc/Project.toml"><a class="docs-heading-anchor" href="#Update-julia/doc/Project.toml">Update <code>julia/doc/Project.toml</code></a><a id="Update-julia/doc/Project.toml-1"></a><a class="docs-heading-anchor-permalink" href="#Update-julia/doc/Project.toml" title="Permalink"></a></h3><p>Apply the following patch to　<code>julia/doc/Project.toml</code></p><pre><code class="language-diff hljs">diff --git a/doc/Project.toml b/doc/Project.toml
+index dfa65cd107..b4f1f03bfa 100644
+--- a/doc/Project.toml
++++ b/doc/Project.toml
+@@ -1,2 +1,3 @@
+ [deps]
++DocstringTranslation = &quot;d404e13b-1f8e-41a5-a26a-0b758a0c6c97&quot;
+ Documenter = &quot;e30172f5-a6a5-5a46-863b-614d45cd2de4&quot;</code></pre><h3 id="Update-julia/doc/Manifest.toml"><a class="docs-heading-anchor" href="#Update-julia/doc/Manifest.toml">Update <code>julia/doc/Manifest.toml</code></a><a id="Update-julia/doc/Manifest.toml-1"></a><a class="docs-heading-anchor-permalink" href="#Update-julia/doc/Manifest.toml" title="Permalink"></a></h3><p>Apply the following patch to　<code>julia/doc/Manifest.toml</code></p><pre><code class="language-diff hljs">diff --git a/doc/Manifest.toml b/doc/Manifest.toml
+index 76bdc332ff..fb4d338cd1 100644
+--- a/doc/Manifest.toml
++++ b/doc/Manifest.toml
+@@ -1,8 +1,8 @@
+ # This file is machine-generated - editing it directly is not advised
+
+-julia_version = &quot;1.11.1&quot;
++julia_version = &quot;1.11.5&quot;
+ manifest_format = &quot;2.0&quot;
+-project_hash = &quot;e0c77beb18dc1f6cce661ebd60658c0c1a77390f&quot;
++project_hash = &quot;1d69248681ccaf34797736d74c42d8a3677cb49d&quot;
+
+ [[deps.ANSIColoredPrinters]]
+ git-tree-sha1 = &quot;574baf8110975760d391c710b6341da1afa48d8c&quot;
+@@ -26,11 +26,22 @@ version = &quot;1.11.0&quot;
+ uuid = &quot;2a0f44e3-6c83-55bd-87e4-b1978d98bd5f&quot;
+ version = &quot;1.11.0&quot;
+
++[[deps.BitFlags]]
++git-tree-sha1 = &quot;0691e34b3bb8be9307330f88d1a3c3f25466c24d&quot;
++uuid = &quot;d1d4a3ce-64b1-5f1a-9ba4-7e7e69966f35&quot;
++version = &quot;0.1.9&quot;
++
+ [[deps.CodecZlib]]
+ deps = [&quot;TranscodingStreams&quot;, &quot;Zlib_jll&quot;]
+-git-tree-sha1 = &quot;bce6804e5e6044c6daab27bb533d1295e4a2e759&quot;
++git-tree-sha1 = &quot;962834c22b66e32aa10f7611c08c8ca4e20749a9&quot;
+ uuid = &quot;944b1d66-785c-5afd-91f1-9de20f533193&quot;
+-version = &quot;0.7.6&quot;
++version = &quot;0.7.8&quot;
++
++[[deps.ConcurrentUtilities]]
++deps = [&quot;Serialization&quot;, &quot;Sockets&quot;]
++git-tree-sha1 = &quot;d9d26935a0bcffc87d2613ce14c527c99fc543fd&quot;
++uuid = &quot;f0e56b4a-5159-44fe-b623-3e5288b988bb&quot;
++version = &quot;2.5.0&quot;
+
+ [[deps.Dates]]
+ deps = [&quot;Printf&quot;]
+@@ -38,43 +49,62 @@ uuid = &quot;ade2ca70-3891-5945-98fb-dc099432e06a&quot;
+ version = &quot;1.11.0&quot;
+
+ [[deps.DocStringExtensions]]
+-deps = [&quot;LibGit2&quot;]
+-git-tree-sha1 = &quot;2fb1e02f2b635d0845df5d7c167fec4dd739b00d&quot;
++git-tree-sha1 = &quot;e7b7e6f178525d17c720ab9c081e4ef04429f860&quot;
+ uuid = &quot;ffbed154-4ef7-542d-bbb7-c09d3a79fcae&quot;
+-version = &quot;0.9.3&quot;
++version = &quot;0.9.4&quot;
++
++[[deps.DocstringTranslation]]
++deps = [&quot;Documenter&quot;, &quot;Markdown&quot;, &quot;OpenAI&quot;, &quot;SHA&quot;, &quot;Scratch&quot;]
++git-tree-sha1 = &quot;199744cf6fea89695458269649354f5817a568e6&quot;
++repo-rev = &quot;main&quot;
++repo-url = &quot;https://github.com/AtelierArith/DocstringTranslation.jl.git&quot;
++uuid = &quot;d404e13b-1f8e-41a5-a26a-0b758a0c6c97&quot;
++version = &quot;0.1.0&quot;
+
+ [[deps.Documenter]]
+-deps = [&quot;ANSIColoredPrinters&quot;, &quot;AbstractTrees&quot;, &quot;Base64&quot;, &quot;CodecZlib&quot;, &quot;Dates&quot;, &quot;DocStringExtensions&quot;, &quot;Downloads&quot;, &quot;Git&quot;, &quot;IOCapture&quot;, &quot;InteractiveUtils&quot;, &quot;JSON&quot;, &quot;LibGit2&quot;, &quot;Logging&quot;, &quot;Markdown&quot;, &quot;MarkdownAST&quot;, &quot;Pkg&quot;, &quot;PrecompileTools&quot;, &quot;REPL&quot;, &quot;RegistryInstances&quot;, &quot;SHA&quot;, &quot;TOML&quot;, &quot;Test&quot;, &quot;Unicode&quot;]
+-git-tree-sha1 = &quot;d0ea2c044963ed6f37703cead7e29f70cba13d7e&quot;
++deps = [&quot;ANSIColoredPrinters&quot;, &quot;AbstractTrees&quot;, &quot;Base64&quot;, &quot;CodecZlib&quot;, &quot;Dates&quot;, &quot;DocStringExtensions&quot;, &quot;Downloads&quot;, &quot;Git&quot;, &quot;IOCapture&quot;, &quot;InteractiveUtils&quot;, &quot;JSON&quot;, &quot;Logging&quot;, &quot;Markdown&quot;, &quot;MarkdownAST&quot;, &quot;Pkg&quot;, &quot;PrecompileTools&quot;, &quot;REPL&quot;, &quot;RegistryInstances&quot;, &quot;SHA&quot;, &quot;TOML&quot;, &quot;Test&quot;, &quot;Unicode&quot;]
++git-tree-sha1 = &quot;6c182d0bd94142d7cbc3ae8a1e74668f15d0dd65&quot;
+ uuid = &quot;e30172f5-a6a5-5a46-863b-614d45cd2de4&quot;
+-version = &quot;1.8.0&quot;
++version = &quot;1.11.4&quot;
+
+ [[deps.Downloads]]
+ deps = [&quot;ArgTools&quot;, &quot;FileWatching&quot;, &quot;LibCURL&quot;, &quot;NetworkOptions&quot;]
+ uuid = &quot;f43a241f-c20a-4ad4-852c-f6b1247861c6&quot;
+ version = &quot;1.6.0&quot;
+
++[[deps.ExceptionUnwrapping]]
++deps = [&quot;Test&quot;]
++git-tree-sha1 = &quot;d36f682e590a83d63d1c7dbd287573764682d12a&quot;
++uuid = &quot;460bff9d-24e4-43bc-9d9f-a8973cb893f4&quot;
++version = &quot;0.1.11&quot;
++
+ [[deps.Expat_jll]]
+ deps = [&quot;Artifacts&quot;, &quot;JLLWrappers&quot;, &quot;Libdl&quot;]
+-git-tree-sha1 = &quot;1c6317308b9dc757616f0b5cb379db10494443a7&quot;
++git-tree-sha1 = &quot;d55dffd9ae73ff72f1c0482454dcf2ec6c6c4a63&quot;
+ uuid = &quot;2e619515-83b5-522b-bb60-26c02a35a201&quot;
+-version = &quot;2.6.2+0&quot;
++version = &quot;2.6.5+0&quot;
+
+ [[deps.FileWatching]]
+ uuid = &quot;7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee&quot;
+ version = &quot;1.11.0&quot;
+
+ [[deps.Git]]
+-deps = [&quot;Git_jll&quot;]
+-git-tree-sha1 = &quot;04eff47b1354d702c3a85e8ab23d539bb7d5957e&quot;
++deps = [&quot;Git_jll&quot;, &quot;JLLWrappers&quot;, &quot;OpenSSH_jll&quot;]
++git-tree-sha1 = &quot;2230a9cc32394b11a3b3aa807a382e3bbab1198c&quot;
+ uuid = &quot;d7ba0133-e1db-5d97-8f8c-041e4b3a1eb2&quot;
+-version = &quot;1.3.1&quot;
++version = &quot;1.4.0&quot;
+
+ [[deps.Git_jll]]
+ deps = [&quot;Artifacts&quot;, &quot;Expat_jll&quot;, &quot;JLLWrappers&quot;, &quot;LibCURL_jll&quot;, &quot;Libdl&quot;, &quot;Libiconv_jll&quot;, &quot;OpenSSL_jll&quot;, &quot;PCRE2_jll&quot;, &quot;Zlib_jll&quot;]
+-git-tree-sha1 = &quot;ea372033d09e4552a04fd38361cd019f9003f4f4&quot;
++git-tree-sha1 = &quot;2f6d6f7e6d6de361865d4394b802c02fc944fc7c&quot;
+ uuid = &quot;f8c6e375-362e-5223-8a59-34ff63f689eb&quot;
+-version = &quot;2.46.2+0&quot;
++version = &quot;2.49.0+0&quot;
++
++[[deps.HTTP]]
++deps = [&quot;Base64&quot;, &quot;CodecZlib&quot;, &quot;ConcurrentUtilities&quot;, &quot;Dates&quot;, &quot;ExceptionUnwrapping&quot;, &quot;Logging&quot;, &quot;LoggingExtras&quot;, &quot;MbedTLS&quot;, &quot;NetworkOptions&quot;, &quot;OpenSSL&quot;, &quot;PrecompileTools&quot;, &quot;Random&quot;, &quot;SimpleBufferStream&quot;, &quot;Sockets&quot;, &quot;URIs&quot;, &quot;UUIDs&quot;]
++git-tree-sha1 = &quot;f93655dc73d7a0b4a368e3c0bce296ae035ad76e&quot;
++uuid = &quot;cd3eb016-35fb-5094-929b-558a96fad6f3&quot;
++version = &quot;1.10.16&quot;
+
+ [[deps.IOCapture]]
+ deps = [&quot;Logging&quot;, &quot;Random&quot;]
+@@ -89,9 +119,9 @@ version = &quot;1.11.0&quot;
+
+ [[deps.JLLWrappers]]
+ deps = [&quot;Artifacts&quot;, &quot;Preferences&quot;]
+-git-tree-sha1 = &quot;be3dc50a92e5a386872a493a10050136d4703f9b&quot;
++git-tree-sha1 = &quot;a007feb38b422fbdab534406aeca1b86823cb4d6&quot;
+ uuid = &quot;692b3bcd-3c85-4b1f-b108-f13ce0eb3210&quot;
+-version = &quot;1.6.1&quot;
++version = &quot;1.7.0&quot;
+
+ [[deps.JSON]]
+ deps = [&quot;Dates&quot;, &quot;Mmap&quot;, &quot;Parsers&quot;, &quot;Unicode&quot;]
+@@ -99,6 +129,18 @@ git-tree-sha1 = &quot;31e996f0a15c7b280ba9f76636b3ff9e2ae58c9a&quot;
+ uuid = &quot;682c06a0-de6a-54ab-a142-c8b1cf79cde6&quot;
+ version = &quot;0.21.4&quot;
+
++[[deps.JSON3]]
++deps = [&quot;Dates&quot;, &quot;Mmap&quot;, &quot;Parsers&quot;, &quot;PrecompileTools&quot;, &quot;StructTypes&quot;, &quot;UUIDs&quot;]
++git-tree-sha1 = &quot;196b41e5a854b387d99e5ede2de3fcb4d0422aae&quot;
++uuid = &quot;0f8b85d8-7281-11e9-16c2-39a750bddbf1&quot;
++version = &quot;1.14.2&quot;
++
++    [deps.JSON3.extensions]
++    JSON3ArrowExt = [&quot;ArrowTypes&quot;]
++
++    [deps.JSON3.weakdeps]
++    ArrowTypes = &quot;31f734f8-188a-4ce0-8406-c8a06bd891cd&quot;
++
+ [[deps.LazilyInitializedFields]]
+ git-tree-sha1 = &quot;0f2da712350b020bc3957f269c9caad516383ee0&quot;
+ uuid = &quot;0e77f7df-68c5-4e49-93ce-4cd80f5598bf&quot;
+@@ -135,14 +177,20 @@ version = &quot;1.11.0&quot;
+
+ [[deps.Libiconv_jll]]
+ deps = [&quot;Artifacts&quot;, &quot;JLLWrappers&quot;, &quot;Libdl&quot;]
+-git-tree-sha1 = &quot;61dfdba58e585066d8bce214c5a51eaa0539f269&quot;
++git-tree-sha1 = &quot;be484f5c92fad0bd8acfef35fe017900b0b73809&quot;
+ uuid = &quot;94ce4f54-9a6c-5748-9c1c-f9c7231a4531&quot;
+-version = &quot;1.17.0+1&quot;
++version = &quot;1.18.0+0&quot;
+
+ [[deps.Logging]]
+ uuid = &quot;56ddb016-857b-54e1-b83d-db4d58db5568&quot;
+ version = &quot;1.11.0&quot;
+
++[[deps.LoggingExtras]]
++deps = [&quot;Dates&quot;, &quot;Logging&quot;]
++git-tree-sha1 = &quot;f02b56007b064fbfddb4c9cd60161b6dd0f40df3&quot;
++uuid = &quot;e6f89c97-d47a-5376-807f-9c37f3926c36&quot;
++version = &quot;1.1.0&quot;
++
+ [[deps.Markdown]]
+ deps = [&quot;Base64&quot;]
+ uuid = &quot;d6f4376e-aef5-505a-96c1-9c027394607a&quot;
+@@ -154,6 +202,12 @@ git-tree-sha1 = &quot;465a70f0fc7d443a00dcdc3267a497397b8a3899&quot;
+ uuid = &quot;d0879d2d-cac2-40c8-9cee-1863dc0c7391&quot;
+ version = &quot;0.1.2&quot;
+
++[[deps.MbedTLS]]
++deps = [&quot;Dates&quot;, &quot;MbedTLS_jll&quot;, &quot;MozillaCACerts_jll&quot;, &quot;NetworkOptions&quot;, &quot;Random&quot;, &quot;Sockets&quot;]
++git-tree-sha1 = &quot;c067a280ddc25f196b5e7df3877c6b226d390aaf&quot;
++uuid = &quot;739be429-bea8-5141-9913-cc70e7f3736d&quot;
++version = &quot;1.1.9&quot;
++
+ [[deps.MbedTLS_jll]]
+ deps = [&quot;Artifacts&quot;, &quot;Libdl&quot;]
+ uuid = &quot;c8ffd9c3-330d-5841-b78e-0817d7145fa1&quot;
+@@ -171,11 +225,29 @@ version = &quot;2023.12.12&quot;
+ uuid = &quot;ca575930-c2e3-43a9-ace4-1e988b2c1908&quot;
+ version = &quot;1.2.0&quot;
+
++[[deps.OpenAI]]
++deps = [&quot;Dates&quot;, &quot;HTTP&quot;, &quot;JSON3&quot;]
++git-tree-sha1 = &quot;d69de972e2c9140a42afc83a9e3331826d73e27e&quot;
++uuid = &quot;e9f21f70-7185-4079-aca2-91159181367c&quot;
++version = &quot;0.10.1&quot;
++
++[[deps.OpenSSH_jll]]
++deps = [&quot;Artifacts&quot;, &quot;JLLWrappers&quot;, &quot;Libdl&quot;, &quot;OpenSSL_jll&quot;, &quot;Zlib_jll&quot;]
++git-tree-sha1 = &quot;cb7acd5d10aff809b4d0191dfe1956c2edf35800&quot;
++uuid = &quot;9bd350c2-7e96-507f-8002-3f2e150b4e1b&quot;
++version = &quot;10.0.1+0&quot;
++
++[[deps.OpenSSL]]
++deps = [&quot;BitFlags&quot;, &quot;Dates&quot;, &quot;MozillaCACerts_jll&quot;, &quot;OpenSSL_jll&quot;, &quot;Sockets&quot;]
++git-tree-sha1 = &quot;38cb508d080d21dc1128f7fb04f20387ed4c0af4&quot;
++uuid = &quot;4d8831e6-92b7-49fb-bdf8-b643e874388c&quot;
++version = &quot;1.4.3&quot;
++
+ [[deps.OpenSSL_jll]]
+ deps = [&quot;Artifacts&quot;, &quot;JLLWrappers&quot;, &quot;Libdl&quot;]
+-git-tree-sha1 = &quot;7493f61f55a6cce7325f197443aa80d32554ba10&quot;
++git-tree-sha1 = &quot;9216a80ff3682833ac4b733caa8c00390620ba5d&quot;
+ uuid = &quot;458c3c95-2e84-50aa-8efc-19380b2a3a95&quot;
+-version = &quot;3.0.15+1&quot;
++version = &quot;3.5.0+0&quot;
+
+ [[deps.PCRE2_jll]]
+ deps = [&quot;Artifacts&quot;, &quot;Libdl&quot;]
+@@ -184,9 +256,9 @@ version = &quot;10.42.0+1&quot;
+
+ [[deps.Parsers]]
+ deps = [&quot;Dates&quot;, &quot;PrecompileTools&quot;, &quot;UUIDs&quot;]
+-git-tree-sha1 = &quot;8489905bcdbcfac64d1daa51ca07c0d8f0283821&quot;
++git-tree-sha1 = &quot;7d2f8f21da5db6a806faf7b9b292296da42b2810&quot;
+ uuid = &quot;69de0a69-1ddd-5017-9359-2bf0b02dc9f0&quot;
+-version = &quot;2.8.1&quot;
++version = &quot;2.8.3&quot;
+
+ [[deps.Pkg]]
+ deps = [&quot;Artifacts&quot;, &quot;Dates&quot;, &quot;Downloads&quot;, &quot;FileWatching&quot;, &quot;LibGit2&quot;, &quot;Libdl&quot;, &quot;Logging&quot;, &quot;Markdown&quot;, &quot;Printf&quot;, &quot;Random&quot;, &quot;SHA&quot;, &quot;TOML&quot;, &quot;Tar&quot;, &quot;UUIDs&quot;, &quot;p7zip_jll&quot;]
+@@ -234,14 +306,31 @@ version = &quot;0.1.0&quot;
+ uuid = &quot;ea8e919c-243c-51af-8825-aaa63cd721ce&quot;
+ version = &quot;0.7.0&quot;
+
++[[deps.Scratch]]
++deps = [&quot;Dates&quot;]
++git-tree-sha1 = &quot;3bac05bc7e74a75fd9cba4295cde4045d9fe2386&quot;
++uuid = &quot;6c6a2e73-6563-6170-7368-637461726353&quot;
++version = &quot;1.2.1&quot;
++
+ [[deps.Serialization]]
+ uuid = &quot;9e88b42a-f829-5b0c-bbe9-9e923198166b&quot;
+ version = &quot;1.11.0&quot;
+
++[[deps.SimpleBufferStream]]
++git-tree-sha1 = &quot;f305871d2f381d21527c770d4788c06c097c9bc1&quot;
++uuid = &quot;777ac1f9-54b0-4bf8-805c-2214025038e7&quot;
++version = &quot;1.2.0&quot;
++
+ [[deps.Sockets]]
+ uuid = &quot;6462fe0b-24de-5631-8697-dd941f90decc&quot;
+ version = &quot;1.11.0&quot;
+
++[[deps.StructTypes]]
++deps = [&quot;Dates&quot;, &quot;UUIDs&quot;]
++git-tree-sha1 = &quot;159331b30e94d7b11379037feeb9b690950cace8&quot;
++uuid = &quot;856f2bd8-1eba-4b0a-8007-ebc267875bd4&quot;
++version = &quot;1.11.0&quot;
++
+ [[deps.StyledStrings]]
+ uuid = &quot;f489334b-da3d-4c2e-b8f0-e476e12c162b&quot;
+ version = &quot;1.11.0&quot;
+@@ -266,6 +355,11 @@ git-tree-sha1 = &quot;0c45878dcfdcfa8480052b6ab162cdd138781742&quot;
+ uuid = &quot;3bb67fe8-82b1-5028-8e26-92a6c54297fa&quot;
+ version = &quot;0.11.3&quot;
+
++[[deps.URIs]]
++git-tree-sha1 = &quot;cbbebadbcc76c5ca1cc4b4f3b0614b3e603b5000&quot;
++uuid = &quot;5c2747f8-b7ea-4ff2-ba2e-563bfd36b1d4&quot;
++version = &quot;1.5.2&quot;
++
+ [[deps.UUIDs]]
+ deps = [&quot;Random&quot;, &quot;SHA&quot;]
+ uuid = &quot;cf7118a7-6976-5b1a-9a39-7adc72f591a4&quot;</code></pre><p>ja: 翻訳結果が事前に用意されていれば　<code>julia</code> と同階層に <code>translation</code> を配置します． もし，用意できない場合は OpenAI API キーを用意し環境変数 <code>OPENAI_API_KEY</code> を設定しておきます． en: If you have pre-prepared translation results, place the <code>translation</code> directory at the same level as <code>julia</code>. If you don&#39;t have them ready, prepare an OpenAI API key and set it as the environment variable <code>OPENAI_API_KEY</code>.</p><h3 id="Build-translated-Julia-documentation"><a class="docs-heading-anchor" href="#Build-translated-Julia-documentation">Build translated Julia documentation</a><a id="Build-translated-Julia-documentation-1"></a><a class="docs-heading-anchor-permalink" href="#Build-translated-Julia-documentation" title="Permalink"></a></h3><p>Just run the following command:</p><pre><code class="language-sh hljs">$ JULIA_NUM_THREADS=auto make -C julia/doc</code></pre><p>Here, we used <code>JULIA_NUM_THREADS=auto</code> to improve the translation speed. The built documentation is stored in <code>julia/doc/_build/html/&lt;lang&gt;</code>, where <code>lang</code> corresponds to the argument value passed to the <code>@switchlang!</code> macro.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../how_it_works/">« How it works</a><a class="docs-footer-nextpage" href="../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.4 on <span class="colophon-date" title="Tuesday 20 May 2025 04:00">Tuesday 20 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
