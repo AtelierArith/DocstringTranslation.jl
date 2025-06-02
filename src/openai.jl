@@ -22,7 +22,7 @@ Please note:
 - Skip changing words in the form of `[xxx](@ref)` or `[xxx](@ref yyy)`.
 - Do not change any URL.
 - If $(lang) indicates English (e.g., "en"), return the input unchanged.
-
+- Skip translation `Extended Help` since it has a special meaning in Julia
 Return only the resulting text.
 """
 end
