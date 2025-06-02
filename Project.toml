@@ -1,7 +1,7 @@
 name = "DocstringTranslation"
 uuid = "d404e13b-1f8e-41a5-a26a-0b758a0c6c97"
 authors = ["Satoshi Terasaki <terasakisatoshi.math@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
