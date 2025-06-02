@@ -22,6 +22,9 @@ This macro performs the following operations:
 ```
 """
 macro switchlang!(lang)
+    if !haskey(ENV, "OPENAI_API_KEY")
+        @warn("The OPENAI_API_KEY has not been set. Please set OPENAI_API_KEY to the environment variable to use the translation function.")
+    end
     @eval function Docs.parsedoc(d::DocStr)
         if d.object === nothing
             md = Docs.formatdoc(d)
@@ -29,19 +32,24 @@ macro switchlang!(lang)
             md.meta[:path] = d.data[:path]
             begin # hack
                 md_hash_original = hashmd(md)
-                cache_original(md)
                 translated_md = if istranslated(md)
                     translated_md = load_translation(md)
                     translated_md.meta[:module] = d.data[:module]
                     translated_md.meta[:path] = d.data[:path]
                     translated_md
                 else
-                    translated_md = translate_docstring_with_openai(md)
-                    translated_md.meta[:module] = d.data[:module]
-                    translated_md.meta[:path] = d.data[:path]
-                    cache_translation(md_hash_original, translated_md)
-                    # set meta again
-                    translated_md
+                    if haskey(ENV, "OPENAI_API_KEY")
+                        cache_original(md)
+                        translated_md = translate_docstring_with_openai(md)
+                        translated_md.meta[:module] = d.data[:module]
+                        translated_md.meta[:path] = d.data[:path]
+                        cache_translation(md_hash_original, translated_md)
+                        # set meta again
+                        translated_md
+                    else
+                        # do nothing when OPENAI_API_KEY is unset
+                        md
+                    end
                 end
                 md = translated_md
             end # hack
