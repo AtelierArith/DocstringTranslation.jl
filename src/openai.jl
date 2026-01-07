@@ -54,18 +54,48 @@ function translate_with_openai(
     model::String = default_model(),
     system_promptfn = default_docstring_system_promptfn,
 )
-    c = create_chat(
-        ENV["OPENAI_API_KEY"],
-        model,
-        [
-            Dict("role" => "system", "content" => system_promptfn(lang)),
-            Dict("role" => "user", "content" => string(doc)),
-        ];
-        temperature = 0,
+    provider = OpenAI.OpenAIProvider(
+        api_key=ENV["OPENAI_API_KEY"],
+        base_url=get(ENV, "OPENAI_BASE_URL_OVERRIDE", "https://api.openai.com/v1")
     )
-    content = c.response[:choices][begin][:message][:content]
-    content = postprocess_content(content)
-    return Markdown.parse(content)
+    try
+        c = create_chat(
+            provider,
+            model,
+            [
+                Dict("role" => "system", "content" => system_promptfn(lang)),
+                Dict("role" => "user", "content" => string(doc)),
+            ];
+            temperature = 0,
+        )
+        content = c.response[:choices][begin][:message][:content]
+        content = postprocess_content(content)
+        return Markdown.parse(content)
+    catch e
+        error_msg = string(e)
+        # Check for 401 Unauthorized errors
+        if occursin("401", error_msg) || occursin("Unauthorized", error_msg)
+            error("""
+            Authentication failed (401 Unauthorized).
+
+            Possible causes:
+            1. The OPENAI_API_KEY is invalid or expired
+            2. The API key is not valid for the endpoint: $(ENV["OPENAI_BASE_URL_OVERRIDE"])
+            3. The API key format is incorrect
+            4. The API key was not loaded from .env file
+
+            Please verify:
+            - Your .env file contains: OPENAI_API_KEY=sk-<your-key>
+            - You've run: using DotEnv; DotEnv.load!()
+            - Check that the API key is set: @assert haskey(ENV, "OPENAI_API_KEY")
+            - The API key is valid for the endpoint being used
+
+            Original error: $(error_msg)
+            """)
+        else
+            rethrow(e)
+        end
+    end
 end
 
 function _create_hex(l::Markdown.Link)
