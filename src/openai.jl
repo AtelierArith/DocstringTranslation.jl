@@ -1,4 +1,4 @@
-const DEFAULT_MODEL = Ref{String}("gpt-4o-mini-2024-07-18")
+const DEFAULT_MODEL = Ref{String}("gpt-6-luna")
 
 function default_lang()
     return DEFAULT_LANG[]
@@ -66,6 +66,7 @@ function translate_with_openai(
                 Dict("role" => "system", "content" => system_promptfn(lang)),
                 Dict("role" => "user", "content" => string(doc)),
             ];
+            reasoning_effort = "none",
             temperature = 0,
         )
         content = c.response[:choices][begin][:message][:content]
