@@ -61,6 +61,17 @@ function source_block(node::Markdown.Footnote)
     return result
 end
 markdown_source(md::Markdown.MD) = string(source_block(md))
+
+# Markdown's printer does not escape text, so re-serializing a parsed
+# translation can lose escapes (e.g. a restored "\\`"). Keep the validated text
+# with the parsed result so the cache stores exactly what passed validation.
+function parse_translation(text::AbstractString)
+    md = Markdown.parse(text)
+    md.meta[:translation_source] = String(text)
+    return md
+end
+translation_text(md::Markdown.MD) =
+    something(get(md.meta, :translation_source, nothing), markdown_source(md))
 markdown_source(text::AbstractString) = String(text)
 
 # Single-dollar math at the start of a line is parsed as a block by Julia.

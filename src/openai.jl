@@ -45,7 +45,7 @@ function translate_docstring_with_openai(
     doc::Union{Markdown.MD,AbstractString};
     request = page_openai_request,
 )
-    return Markdown.parse(
+    return parse_translation(
         translate_documenter_page_with_openai(
             markdown_source(doc);
             request,
