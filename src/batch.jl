@@ -25,7 +25,7 @@ function page_translation(
     @debug "Documenter translation cache lookup" source cachedir=pathofcachedir(mdpage) hit
     translated = cached_translation(
         mdpage;
-        translator = _ -> Markdown.parse(
+        translator = _ -> parse_translation(
             translate_documenter_page_with_openai(
                 mdsrc;
                 request,

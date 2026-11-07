@@ -137,6 +137,8 @@ function load_translation(md::Markdown.MD)
         get(md.meta, :docstring_translation, false)
     translated = Markdown.parse(protected ? content : postprocess_content(content))
     merge!(translated.meta, copy(md.meta))
+    # Re-caching a loaded entry (e.g. under an alias) writes the file verbatim.
+    translated.meta[:translation_source] = content
     return translated
 end
 
@@ -167,7 +169,7 @@ function cache_translation(md_hash_original::String, transmd::Markdown.MD)
     file = cache_component(normalize_language(DEFAULT_LANG[])) * ".md"
     atomic_cache_write(
         joinpath(pathofcachedir(transmd), md_hash_original, file),
-        markdown_source(transmd),
+        translation_text(transmd),
     )
 end
 
@@ -196,7 +198,9 @@ function cached_translation(
                 throw(ArgumentError("Translator must return Markdown.MD"))
             isempty(strip(string(translated))) &&
                 error("Translation returned empty content")
+            text = translation_text(translated)
             merge!(translated.meta, copy(md.meta))
+            translated.meta[:translation_source] = text
             cache_translation(hashmd(md), translated)
             lock(TRANSLATION_STATE_LOCK) do
                 delete!(TRANSLATION_FAILURES, key)

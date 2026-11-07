@@ -241,3 +241,25 @@ end
         @test md.meta[:path] == ci_page
     end
 end
+
+@testitem "Cached page translations keep the validated text verbatim" begin
+    using Test, Markdown, DocstringTranslation
+    D = DocstringTranslation
+    mktempdir() do dir
+        D.switchtranslationcachedir!(joinpath(dir, "cache"))
+        D.DOCUMENTER_TARGET_PACKAGE[] = Dict(:name => "Fixture", :version => v"1.0.0")
+        D._switchlang!("ja")
+        # Stray backticks are restored escaped; re-serializing the parsed
+        # Markdown would drop the escapes and turn them into a code span.
+        path = joinpath(dir, "page.md")
+        write(path, "- `julia_x`: bright_magenta, inherits from `julia_parentheses`\n")
+        request = (text, _) -> replace(text, "bright*magenta" => "明るいマゼンタ")
+        codes(md) = [
+            c.code for c in only(only(only(md.content).items)).content if c isa Markdown.Code
+        ]
+        fresh = D.translated_page(path; request, available = true)
+        @test codes(fresh) == ["julia_x"]
+        cached = D.translated_page(path; available = false)
+        @test codes(cached) == ["julia_x"]
+    end
+end
