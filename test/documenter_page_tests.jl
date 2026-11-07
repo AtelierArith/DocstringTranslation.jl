@@ -205,3 +205,20 @@ end
     @test_throws ArgumentError translate_documenter_page_with_openai("Text."; request)
     @test calls[] == 1
 end
+
+@testitem "Fenced code inside ordered list items survives restoration" begin
+    using Test, Markdown
+    using DocstringTranslation: translate_documenter_page
+
+    # Markdown's printer indents ordered-list continuations by four spaces,
+    # which its parser does not read back as a fence after a "1. " marker.
+    for source in (
+        "1. Item one:\n   ```sh\n   echo 0\n   ```\n   After.\n2. Two\n",
+        "9. Nine:\n   ```sh\n   echo 9\n   ```\n10. Ten:\n    ```sh\n    echo 10\n    ```\n",
+        "- Outer\n\n  1. Inner:\n     ```sh\n     echo nested\n     ```\n",
+        "!!! note\n    1. In a note:\n       ```sh\n       echo note\n       ```\n",
+    )
+        result = translate_documenter_page(source; translator = identity)
+        @test Markdown.parse(result) == Markdown.parse(source)
+    end
+end
