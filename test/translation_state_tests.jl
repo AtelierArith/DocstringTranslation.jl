@@ -343,3 +343,31 @@ end
         @test restored.content[2].formula == "x^2 + y^2"
     end
 end
+
+@testitem "Inline math can start a translated paragraph and survive cache reload" begin
+    using Test, Markdown, DocstringTranslation
+    D = DocstringTranslation
+    ticks = repeat(string(Char(96)), 2)
+    source = "Compute " * ticks * "x^2" * ticks * "."
+    doc = Markdown.MD(Any[Markdown.parse(source)])
+    doc.meta[:module] = Main
+    doc.meta[:docstring_translation] = true
+    translate =
+        md -> D.translate_docstring_with_openai(
+            md;
+            request = (text, prompt) ->
+                replace(text, r"Compute (DTPROTECTED[A-Z0-9]+)\." => s"\1 を計算。"),
+        )
+    mktempdir() do dir
+        D.switchtranslationcachedir!(dir)
+        D._switchlang!("ja")
+        translated = D.cached_translation(doc; translator = translate, available = true)
+        @test translated.content[1] isa Markdown.Paragraph
+        @test translated.content[1].content[1] isa Markdown.LaTeX
+        @test translated.content[1].content[1].formula == "x^2"
+        cached = D.cached_translation(doc; available = false)
+        @test cached.content[1] isa Markdown.Paragraph
+        @test cached.content[1].content[1] isa Markdown.LaTeX
+        @test cached.content[1].content[1].formula == "x^2"
+    end
+end

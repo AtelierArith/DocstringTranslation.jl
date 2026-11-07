@@ -25,7 +25,9 @@ Cache lookup must honor language/directory changes without retranslating transla
 
 ## Verification record
 
-- Julia 1.13.3 and 1.10.12: 135 assertions passed, including Aqua, JET and offline Documenter build.
+- Julia 1.13.3 and 1.10.12: 141 assertions passed, including Aqua, JET and offline Documenter build.
 - Review caught an encoded-filename alias collision; reproduced with two failing assertions, fixed and reviewed.
 - Fresh SpecialFunctions API build caught display-math serialization through nested Markdown.MD; reproduced, fixed, and reviewed. Math now serializes as Julia-compatible fences; code containing dollar signs remains unchanged.
 - Fresh API build is rerunning from an empty verification cache.
+
+- Captured dawson API response now passes: inline math uses double backticks so translated math at paragraph start remains inline. Regression checks fresh translation and cache reload.

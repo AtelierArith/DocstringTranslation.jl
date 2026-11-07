@@ -39,3 +39,24 @@ function source_block(node::Markdown.Footnote)
 end
 markdown_source(md::Markdown.MD) = string(source_block(md))
 markdown_source(text::AbstractString) = String(text)
+
+# Single-dollar math at the start of a line is parsed as a block by Julia.
+# Double-backtick math remains inline after natural-language reordering.
+source_inline(node) = node
+source_inline(node::Markdown.LaTeX) =
+    "``" * node.formula * "``"
+function source_inline(node::Union{Markdown.Bold,Markdown.Italic,Markdown.Link})
+    result = deepcopy(node)
+    result.text = Any[source_inline(c) for c in node.text]
+    return result
+end
+source_block(node::Markdown.Paragraph) =
+    Markdown.Paragraph(Any[source_inline(c) for c in node.content])
+function source_block(node::Markdown.Table)
+    result = deepcopy(node)
+    for row in result.rows, i in eachindex(row)
+        cell = row[i]
+        row[i] = Any[source_inline(c) for c in (cell isa AbstractVector ? cell : Any[cell])]
+    end
+    return result
+end

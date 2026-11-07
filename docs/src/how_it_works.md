@@ -51,3 +51,7 @@ model's input or output limits also fail rather than caching partial results.
 Some Markdown node types are not yet supported and cause a clear error instead
 of being translated unsafely. Cached pages from the previous paragraph-based
 implementation are not reused.
+
+Display math is serialized with math fences and inline math with double backticks,
+so Julia reads the same mathematical structure back even when translation places
+an inline formula at the beginning of a paragraph.
