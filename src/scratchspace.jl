@@ -124,7 +124,8 @@ function load_translation(md::Markdown.MD)
     cachedir = joinpath(pathofcachedir(md, allowold), hashmd(md))
     lang = DEFAULT_LANG[]
     mdpath = joinpath(cachedir, lang * ".md")
-    Markdown.parse(postprocess_content(read(mdpath, String)))
+    content = read(mdpath, String)
+    Markdown.parse(get(md.meta, :documenter_page_translation, false) ? content : postprocess_content(content))
 end
 
 """

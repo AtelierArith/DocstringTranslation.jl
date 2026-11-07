@@ -25,6 +25,7 @@ end
 include("util.jl")
 include("scratchspace.jl")
 include("openai.jl")
+include("documenter_page.jl")
 
 include("switchlang.jl")
 export @switchlang!
