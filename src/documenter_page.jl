@@ -13,8 +13,8 @@ function protect!(state::PageProtection, original::AbstractString, kind::String)
     return marker
 end
 
-markdown_block(node) = chomp(string(Markdown.MD(node)))
-markdown_inline(node) = chomp(string(Markdown.MD(Markdown.Paragraph(Any[node]))))
+markdown_block(node) = chomp(markdown_source(Markdown.MD(node)))
+markdown_inline(node) = chomp(markdown_source(Markdown.MD(Markdown.Paragraph(Any[node]))))
 
 function protect_block(node, state)
     if node isa Union{Markdown.Header,Markdown.Code,Markdown.LaTeX,Markdown.HorizontalRule}

@@ -30,7 +30,11 @@ Please refer to the `DocstringTranslation.jl/src/switchlang.jl` file if you want
    - Each documentation string is translated
    - Translation results are cached and reused in subsequent generations
 
-### Documenter pages
+### Documenter pages and docstrings
+
+Each docstring uses the same protected translation and cache flow as pages.
+The pristine docstring is retained so subsequent language changes always start
+from its original content.
 
 A Documenter Markdown page is sent to the translation service as one request,
 so the service can use the surrounding page as context. Headings, code blocks,
@@ -47,3 +51,7 @@ model's input or output limits also fail rather than caching partial results.
 Some Markdown node types are not yet supported and cause a clear error instead
 of being translated unsafely. Cached pages from the previous paragraph-based
 implementation are not reused.
+
+Display math is serialized with math fences and inline math with double backticks,
+so Julia reads the same mathematical structure back even when translation places
+an inline formula at the beginning of a paragraph.

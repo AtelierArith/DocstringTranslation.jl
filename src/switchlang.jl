@@ -1,5 +1,5 @@
 function _switchlang!(lang::Union{String,Symbol})
-    DEFAULT_LANG[] = String(lang)
+    DEFAULT_LANG[] = normalize_language(lang)
 end
 
 """
@@ -23,39 +23,12 @@ This macro performs the following operations:
 """
 macro switchlang!(lang)
     if !haskey(ENV, "OPENAI_API_KEY")
-        @warn("The OPENAI_API_KEY has not been set. Please set OPENAI_API_KEY to the environment variable to use the translation function.")
+        @warn(
+            "The OPENAI_API_KEY has not been set. Please set OPENAI_API_KEY to the environment variable to use the translation function."
+        )
     end
     @eval function Docs.parsedoc(d::DocStr)
-        if d.object === nothing
-            md = Docs.formatdoc(d)
-            md.meta[:module] = d.data[:module]
-            md.meta[:path] = d.data[:path]
-            begin # hack
-                md_hash_original = hashmd(md)
-                translated_md = if istranslated(md)
-                    translated_md = load_translation(md)
-                    translated_md.meta[:module] = d.data[:module]
-                    translated_md.meta[:path] = d.data[:path]
-                    translated_md
-                else
-                    if haskey(ENV, "OPENAI_API_KEY")
-                        cache_original(md)
-                        translated_md = translate_docstring_with_openai(md)
-                        translated_md.meta[:module] = d.data[:module]
-                        translated_md.meta[:path] = d.data[:path]
-                        cache_translation(md_hash_original, translated_md)
-                        # set meta again
-                        translated_md
-                    else
-                        # do nothing when OPENAI_API_KEY is unset
-                        md
-                    end
-                end
-                md = translated_md
-            end # hack
-            d.object = md
-        end
-        d.object
+        translated_docstring(d)
     end
 
     # Overrides Page constructor to hack Documenter to translate docstrings
@@ -75,21 +48,20 @@ macro switchlang!(lang)
         mdpage = Markdown.parse(mdsrc)
         begin # hack
             target_package = DOCUMENTER_TARGET_PACKAGE[][:name]
-            mdpage.meta[:path] = joinpath(target_package, first(splitext(source)))
-            mdpage.meta[:documenter_page_translation] = true
-            cache_original(mdpage)
-            @debug "Translating ..." mdpage
-            mdhash_original = hashmd(mdpage)
-            if !istranslated(mdpage)
-                # Update mdpage object
-                translated_source = translate_documenter_page_with_openai(mdsrc)
-                translated_page = Markdown.parse(translated_source)
-                merge!(translated_page.meta, mdpage.meta)
-                mdpage = translated_page
-                cache_translation(mdhash_original, mdpage)
-            else
-                mdpage = load_translation(mdpage)
+            mdpage.meta[:path] = abspath(source)
+            if !isabspath(source) && !(".." in splitpath(source))
+                mdpage.meta[:legacy_cache_path] =
+                    joinpath(target_package, first(splitext(source)))
             end
+            mdpage.meta[:documenter_page_translation] = true
+            @debug "Documenter translation cache lookup" source cachedir=pathofcachedir(
+                mdpage,
+            ) hit=istranslated(mdpage)
+            mdpage = cached_translation(
+                mdpage;
+                translator = _ ->
+                    Markdown.parse(translate_documenter_page_with_openai(mdsrc)),
+            )
             @debug "Translated" mdpage
         end # hack
         mdast = try
@@ -115,4 +87,22 @@ macro switchlang!(lang)
         local _lang = $(esc(lang))
         _switchlang!(_lang)
     end
+end
+
+
+# Keep the pristine object in DocStr.data, which survives subsequent parsedoc calls.
+function translated_docstring(
+    d::DocStr;
+    translator = translate_docstring_with_openai,
+    available::Bool = haskey(ENV, "OPENAI_API_KEY"),
+)
+    original = get!(d.data, :docstringtranslation_original) do
+        md = copy_markdown(d.object === nothing ? Docs.formatdoc(d) : d.object)
+        md.meta[:module] = d.data[:module]
+        md.meta[:path] = get(d.data, :path, "")
+        md.meta[:docstring_translation] = true
+        md
+    end
+    d.object = cached_translation(original; translator, available)
+    return d.object
 end

@@ -10,9 +10,9 @@ import Documenter
 
 using OpenAI
 
-const DEFAULT_LANG = Ref{String}()
+const DEFAULT_LANG = Ref{String}("en")
 const TRANSLATION_CACHE_DIR = Ref{String}()
-const DOCUMENTER_TARGET_PACKAGE = Ref{Dict{Symbol, Any}}()
+const DOCUMENTER_TARGET_PACKAGE = Ref{Dict{Symbol,Any}}()
 
 function switchtranslationcachedir!(dir::AbstractString)
     TRANSLATION_CACHE_DIR[] = dir
@@ -22,6 +22,7 @@ function switchtargetpackage!(pkg::Module)
     DOCUMENTER_TARGET_PACKAGE[] = Dict(:name=>string(pkg), :version=>pkgversion(pkg))
 end
 
+include("languages.jl")
 include("util.jl")
 include("scratchspace.jl")
 include("openai.jl")

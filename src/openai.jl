@@ -27,8 +27,13 @@ Return only the resulting text.
 """
 end
 
-function translate_docstring_with_openai(doc::Union{Markdown.MD,AbstractString})
-    translate_with_openai(doc; system_promptfn = default_docstring_system_promptfn)
+function translate_docstring_with_openai(
+    doc::Union{Markdown.MD,AbstractString};
+    request = page_openai_request,
+)
+    return Markdown.parse(
+        translate_documenter_page_with_openai(markdown_source(doc); request),
+    )
 end
 
 function default_documenter_md_system_promptfn(lang)
@@ -61,8 +66,8 @@ function translate_with_openai(
     raw::Bool = false,
 )
     provider = OpenAI.OpenAIProvider(
-        api_key=ENV["OPENAI_API_KEY"],
-        base_url=get(ENV, "OPENAI_BASE_URL_OVERRIDE", "https://api.openai.com/v1")
+        api_key = ENV["OPENAI_API_KEY"],
+        base_url = get(ENV, "OPENAI_BASE_URL_OVERRIDE", "https://api.openai.com/v1"),
     )
     try
         c = create_chat(
@@ -75,33 +80,31 @@ function translate_with_openai(
             reasoning_effort = "none",
             temperature = 0,
         )
-        choice = c.response[:choices][begin]
-        get(choice, :finish_reason, nothing) == "stop" ||
-            error("Translation did not finish successfully: $(get(choice, :finish_reason, nothing))")
-        content = choice[:message][:content]
-        content isa AbstractString && !isempty(strip(content)) || error("Translation returned empty content")
+        content = translation_content(c.response)
         return raw ? content : Markdown.parse(postprocess_content(content))
     catch e
         error_msg = string(e)
         # Check for 401 Unauthorized errors
         if occursin("401", error_msg) || occursin("Unauthorized", error_msg)
-            error("""
-            Authentication failed (401 Unauthorized).
+            error(
+                """
+          Authentication failed (401 Unauthorized).
 
-            Possible causes:
-            1. The OPENAI_API_KEY is invalid or expired
-            2. The API key is not valid for the endpoint: $(get(ENV, "OPENAI_BASE_URL_OVERRIDE", "https://api.openai.com/v1"))
-            3. The API key format is incorrect
-            4. The API key was not loaded from .env file
+          Possible causes:
+          1. The OPENAI_API_KEY is invalid or expired
+          2. The API key is not valid for the endpoint: $(get(ENV, "OPENAI_BASE_URL_OVERRIDE", "https://api.openai.com/v1"))
+          3. The API key format is incorrect
+          4. The API key was not loaded from .env file
 
-            Please verify:
-            - Your .env file contains: OPENAI_API_KEY=sk-<your-key>
-            - You've run: using DotEnv; DotEnv.load!()
-            - Check that the API key is set: @assert haskey(ENV, "OPENAI_API_KEY")
-            - The API key is valid for the endpoint being used
+          Please verify:
+          - Your .env file contains: OPENAI_API_KEY=sk-<your-key>
+          - You've run: using DotEnv; DotEnv.load!()
+          - Check that the API key is set: @assert haskey(ENV, "OPENAI_API_KEY")
+          - The API key is valid for the endpoint being used
 
-            Original error: $(error_msg)
-            """)
+          Original error: $(error_msg)
+          """,
+            )
         else
             rethrow(e)
         end
@@ -110,26 +113,53 @@ end
 
 
 # Retry only invalid page output; never save a response that failed validation.
-page_openai_request(text, prompt) = translate_with_openai(text; system_promptfn = prompt, raw = true)
+page_openai_request(text, prompt) =
+    translate_with_openai(text; system_promptfn = prompt, raw = true)
 
-function translate_documenter_page_with_openai(source::AbstractString; max_attempts::Int = 3, request = page_openai_request)
+function translate_documenter_page_with_openai(
+    source::AbstractString;
+    max_attempts::Int = 3,
+    request = page_openai_request,
+)
     feedback = ""
-    for attempt in 1:max_attempts
+    for attempt = 1:max_attempts
         requested = Ref(false)
         try
-            return translate_documenter_page(source; translator = text -> begin
-                prompt = lang -> default_documenter_md_system_promptfn(lang) * feedback
-                response = request(text, prompt)
-                requested[] = true
-                response
-            end)
+            return translate_documenter_page(
+                source;
+                translator = text -> begin
+                    prompt = lang -> default_documenter_md_system_promptfn(lang) * feedback
+                    response = request(text, prompt)
+                    requested[] = true
+                    response
+                end,
+            )
         catch err
             if !(err isa ArgumentError && requested[] && attempt < max_attempts)
                 rethrow()
             end
-            @warn "Documenter page translation failed validation; retrying" attempt exception = err
+            @warn "Documenter page translation failed validation; retrying" attempt exception =
+                err
             feedback *= "\nAn earlier translation failed validation: $(sprint(showerror, err)). Preserve all markers in their original paragraph, table cell, and link destination.\n"
         end
     end
     error("Page translation attempts exhausted")
+end
+
+
+# OpenAI.jl exposes response choices as symbol-keyed dictionaries.
+function translation_content(response)
+    choices = get(response, :choices, nothing)
+    choices isa AbstractVector && !isempty(choices) ||
+        error("Translation response has no choices")
+    choice = first(choices)
+    choice isa AbstractDict || error("Translation response has an invalid choice")
+    reason = get(choice, :finish_reason, nothing)
+    reason == "stop" || error("Translation did not finish successfully: $reason")
+    message = get(choice, :message, nothing)
+    message isa AbstractDict || error("Translation response has no message")
+    content = get(message, :content, nothing)
+    content isa AbstractString && !isempty(strip(content)) ||
+        error("Translation returned empty content")
+    return content
 end

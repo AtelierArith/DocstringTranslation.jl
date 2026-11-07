@@ -31,139 +31,162 @@ function insertversion(svec::AbstractVector, v::VersionNumber)
     insert!(deepcopy(svec), 2, "$(major).$(minor)")
 end
 
+# Encode components without allowing separators, dot traversal, or reserved filenames.
+function cache_component(value::AbstractString)
+    if occursin(r"^[A-Za-z0-9_.-]+$", value) &&
+       lowercase(value) ∉ (".", "..", "original") &&
+       !startswith(lowercase(value), "encoded-")
+        return String(value)
+    end
+    return "encoded-" * bytes2hex(codeunits(value))
+end
+
+function cache_parts(md::Markdown.MD)
+    if haskey(md.meta, :module)
+        mod = md.meta[:module]
+        return cache_component.(split(string(mod), ".")),
+        something(pkgversion(mod), VERSION)
+    elseif haskey(md.meta, :path)
+        source = String(md.meta[:path])
+        version = something(DOCUMENTER_TARGET_PACKAGE[][:version], VERSION)
+        if isabspath(source) || ".." in splitpath(source)
+            # The full normalized source identity prevents basename collisions.
+            parts = [
+                cache_component(DOCUMENTER_TARGET_PACKAGE[][:name]),
+                "pages",
+                bytes2hex(sha256(ispath(source) ? realpath(source) : abspath(source))),
+                cache_component(basename(normpath(source))),
+            ]
+        else
+            parts = cache_component.(splitpath(normpath(source)))
+            isempty(parts) && throw(ArgumentError("Empty page cache path"))
+        end
+        return parts, version
+    end
+    throw(ArgumentError("No module or path found in the markdown metadata."))
+end
+
 """
-    pathofcachedir(md::Markdown.MD, allowold::Bool = false)
+    pathofcachedir(md::Markdown.MD, allowold::Bool=false)
 
-Get the cache directory path for a given Markdown document.
-
-# Arguments
-- `md::Markdown.MD`: The Markdown document to get the cache path for
-- `allowold::Bool = false`: If true, allows falling back to previous minor version's cache directory
-
-# Returns
-A string containing the full path to the cache directory.
-
-# Details
-The cache directory path is constructed based on either:
-- The module path from `md.meta[:module]` if present, using the module's version or `VERSION`
-- The file path from `md.meta[:path]` if present, using `VERSION`
-
-If `allowold` is true and the target directory doesn't exist, falls back to the previous minor version's directory.
-
-# Throws
-- `ArgumentError`: If neither `:module` nor `:path` is found in the markdown metadata
+Return a cache directory inside the configured root. Unversioned modules use
+the Julia version. Absolute and parent-relative page paths use a source hash.
 """
 function pathofcachedir(md::Markdown.MD, allowold::Bool = false)
-    if haskey(md.meta, :module)
-        svec = split(string(md.meta[:module]), ".")
-        v = something(pkgversion(md.meta[:module]), VERSION)
-        svec_with_version = insertversion(svec, v)
-        d = joinpath(TRANSLATION_CACHE_DIR[], svec_with_version...)
-        if !isdir(d) && allowold
-            # we try to find the previous minor version.
-            svec_with_prev_version = insertversion(deepcopy(svec), prevminor(v))
-            return joinpath(TRANSLATION_CACHE_DIR[], svec_with_prev_version...)
-        else
-            return d
-        end
-    elseif haskey(md.meta, :path)
-        # In case the module is not set.
-        # This happens when we translate markdown in doc/src/<blah>.md
-        svec = splitpath(md.meta[:path])
-        v = DOCUMENTER_TARGET_PACKAGE[][:version]
-        svec_with_version = insertversion(svec, v)
-        d = joinpath(TRANSLATION_CACHE_DIR[], svec_with_version...)
-        if !isdir(d) && allowold
-            # we try to find the previous minor version.
-            svec_with_prev_version = insertversion(deepcopy(svec), prevminor(v))
-            return joinpath(TRANSLATION_CACHE_DIR[], svec_with_prev_version...)
-        else
-            return d
-        end
-    else
-        throw(ArgumentError("No module or path found in the markdown metadata."))
+    parts, version = cache_parts(md)
+    current = joinpath(TRANSLATION_CACHE_DIR[], insertversion(parts, version)...)
+    if allowold && !isdir(current)
+        return joinpath(
+            TRANSLATION_CACHE_DIR[],
+            insertversion(parts, prevminor(version))...,
+        )
     end
+    return current
 end
 
-"""
-    istranslated(md::Markdown.MD)
-
-Check if a translation exists for the given Markdown document.
-
-# Arguments
-- `md::Markdown.MD`: The Markdown document to check for translation
-
-# Returns
-`true` if a translation file exists in the cache directory for the current language,
-`false` otherwise.
-"""
-function istranslated(md::Markdown.MD)
-    allowold = true
-    cachedir = joinpath(pathofcachedir(md, allowold), hashmd(md))
-    lang = DEFAULT_LANG[]
-    mdpath = joinpath(cachedir, lang * ".md")
-    isfile(mdpath)
+function translation_file(md::Markdown.MD)
+    parts, version = cache_parts(md)
+    lang = normalize_language(DEFAULT_LANG[])
+    filename = cache_component(lang) * ".md"
+    directories = [
+        joinpath(TRANSLATION_CACHE_DIR[], insertversion(parts, v)..., hashmd(md)) for
+        v in (version, prevminor(version))
+    ]
+    legacy = get(md.meta, :legacy_cache_path, nothing)
+    if legacy isa AbstractString && !isabspath(legacy) && !(".." in splitpath(legacy))
+        legacy_parts = cache_component.(splitpath(normpath(legacy)))
+        if !isempty(legacy_parts)
+            append!(
+                directories,
+                [
+                    joinpath(
+                        TRANSLATION_CACHE_DIR[],
+                        insertversion(legacy_parts, v)...,
+                        hashmd(md),
+                    ) for v in (version, prevminor(version))
+                ],
+            )
+        end
+    end
+    for dir in directories
+        exact = joinpath(dir, filename)
+        isfile(exact) && return exact
+        # Compatible old language-name entries remain readable.
+        if isdir(dir)
+            for name in readdir(dir)
+                lowercase(name) == "original.md" && continue
+                startswith(lowercase(name), "encoded-") && continue
+                endswith(name, ".md") || continue
+                normalize_language(first(splitext(name))) == lang || continue
+                return joinpath(dir, name)
+            end
+        end
+    end
+    return nothing
 end
 
-"""
-    load_translation(md::Markdown.MD)
+istranslated(md::Markdown.MD) = translation_file(md) !== nothing
 
-Load the cached translation for a given Markdown document.
-
-# Arguments
-- `md::Markdown.MD`: The Markdown document to load the translation for
-
-# Returns
-A new `Markdown.MD` object containing the translated content.
-
-# Details
-Loads the translation file from cache, post-processes it, and parses it as Markdown.
-"""
+"""Load a compatible cached translation and restore the original metadata."""
 function load_translation(md::Markdown.MD)
-    allowold = true
-    cachedir = joinpath(pathofcachedir(md, allowold), hashmd(md))
-    lang = DEFAULT_LANG[]
-    mdpath = joinpath(cachedir, lang * ".md")
-    content = read(mdpath, String)
-    Markdown.parse(get(md.meta, :documenter_page_translation, false) ? content : postprocess_content(content))
+    file = translation_file(md)
+    file === nothing &&
+        throw(ArgumentError("No cached translation for the selected language"))
+    content = read(file, String)
+    protected =
+        get(md.meta, :documenter_page_translation, false) ||
+        get(md.meta, :docstring_translation, false)
+    translated = Markdown.parse(protected ? content : postprocess_content(content))
+    merge!(translated.meta, copy(md.meta))
+    return translated
 end
 
-"""
-    cache_original(md::Markdown.MD)
+function atomic_cache_write(path, text)
+    mkpath(dirname(path))
+    temporary, io = mktemp(dirname(path))
+    try
+        write(io, text)
+        close(io)
+        mv(temporary, path; force = true)
+    finally
+        isopen(io) && close(io)
+        isfile(temporary) && rm(temporary)
+    end
+    return path
+end
 
-Cache the original version of a Markdown document.
-
-# Arguments
-- `md::Markdown.MD`: The Markdown document to cache
-
-# Details
-Creates a cache directory if it doesn't exist and saves the original Markdown content
-to 'original.md' within that directory.
-"""
+"""Save pristine Markdown as original.md."""
 function cache_original(md::Markdown.MD)
-    cachedir = joinpath(pathofcachedir(md), hashmd(md))
-    mkpath(cachedir)
-    mdpath = joinpath(cachedir, "original.md")
-    write(mdpath, string(md))
+    atomic_cache_write(
+        joinpath(pathofcachedir(md), hashmd(md), "original.md"),
+        markdown_source(md),
+    )
 end
 
-"""
-    cache_translation(md_hash_original::String, transmd::Markdown.MD)
-
-Cache a translated version of a Markdown document.
-
-# Arguments
-- `md_hash_original::String`: The hash of the original Markdown document
-- `transmd::Markdown.MD`: The translated Markdown document to cache
-
-# Details
-Creates a cache directory if it doesn't exist and saves the translated content
-to a language-specific file (e.g., 'ja.md' for Japanese) within that directory.
-"""
+"""Save a successfully translated document under its original hash."""
 function cache_translation(md_hash_original::String, transmd::Markdown.MD)
-    cachedir = joinpath(pathofcachedir(transmd), md_hash_original)
-    lang = DEFAULT_LANG[]
-    mdpath = joinpath(cachedir, lang * ".md")
-    mkpath(cachedir)
-    write(mdpath, string(transmd))
+    file = cache_component(normalize_language(DEFAULT_LANG[])) * ".md"
+    atomic_cache_write(
+        joinpath(pathofcachedir(transmd), md_hash_original, file),
+        markdown_source(transmd),
+    )
 end
+
+"""Select a cached translation, or translate the pristine original and save on success."""
+function cached_translation(
+    md::Markdown.MD;
+    translator = translate_docstring_with_openai,
+    available::Bool = haskey(ENV, "OPENAI_API_KEY"),
+)
+    istranslated(md) && return load_translation(md)
+    available || return copy_markdown(md)
+    cache_original(md)
+    translated = translator(copy_markdown(md))
+    translated isa Markdown.MD || throw(ArgumentError("Translator must return Markdown.MD"))
+    isempty(strip(string(translated))) && error("Translation returned empty content")
+    merge!(translated.meta, copy(md.meta))
+    cache_translation(hashmd(md), translated)
+    return translated
+end
+
+copy_markdown(md::Markdown.MD) = Markdown.MD(deepcopy(md.content), copy(md.meta))
