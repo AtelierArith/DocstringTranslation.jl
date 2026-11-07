@@ -32,6 +32,10 @@ function Markdown.plain(io::IO, wrapper::SourceList)
         marker = Markdown.isordered(list) ? "$(i + list.ordered - 1). " : "  * "
         print(io, marker)
         lines = split(rstrip(sprint(Markdown.plain, item)), "\n")
+        # Nested blocks such as admonitions end with a blank line; two blank
+        # lines in a row would end the list when the text is parsed again.
+        lines = [line for (n, line) in enumerate(lines) if
+                 !(isempty(line) && n > 1 && isempty(lines[n-1]))]
         for (n, line) in enumerate(lines)
             print(io, (n == 1 || isempty(line)) ? "" : " "^length(marker), line)
             n < length(lines) && println(io)
@@ -62,8 +66,12 @@ markdown_source(text::AbstractString) = String(text)
 # Single-dollar math at the start of a line is parsed as a block by Julia.
 # Double-backtick math remains inline after natural-language reordering.
 source_inline(node) = node
-source_inline(node::Markdown.LaTeX) =
-    "``" * node.formula * "``"
+function source_inline(node::Markdown.LaTeX)
+    # The parser strips one space on each side, which lets a formula start or
+    # end with a backtick without merging into the delimiter.
+    pad = startswith(node.formula, '`') || endswith(node.formula, '`') ? " " : ""
+    return "``" * pad * node.formula * pad * "``"
+end
 function source_inline(node::Union{Markdown.Bold,Markdown.Italic,Markdown.Link})
     result = deepcopy(node)
     result.text = Any[source_inline(c) for c in node.text]

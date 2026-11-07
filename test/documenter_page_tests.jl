@@ -222,3 +222,30 @@ end
         @test Markdown.parse(result) == Markdown.parse(source)
     end
 end
+
+@testitem "Admonitions inside list items do not end the list" begin
+    using Test, Markdown
+    using DocstringTranslation: translate_documenter_page
+
+    # Admonitions print a trailing blank line; a second blank line inside a
+    # list item makes Julia's parser end the list.
+    for source in (
+        "1. One\n\n   !!! note\n       Noted.\n\n   After the note.\n2. Two\n",
+        "- One\n\n  !!! note\n      Noted.\n\n  After the note.\n- Two\n",
+    )
+        result = translate_documenter_page(source; translator = identity)
+        @test Markdown.parse(result) == Markdown.parse(source)
+    end
+end
+
+@testitem "Double-backtick math containing backticks round-trips" begin
+    using Test, Markdown
+    using DocstringTranslation: translate_documenter_page
+
+    # Julia parses ``…`` as inline math; a formula that starts or ends with a
+    # backtick needs padding spaces to be read back.
+    for source in ("Quotes (`\"`, and `` ` ``) here.\n", "Math `` `a` `` and ``x``.\n")
+        result = translate_documenter_page(source; translator = identity)
+        @test Markdown.parse(result) == Markdown.parse(source)
+    end
+end
