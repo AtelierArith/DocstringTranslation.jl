@@ -249,3 +249,63 @@ end
         @test Markdown.parse(result) == Markdown.parse(source)
     end
 end
+
+@testitem "Bare URLs end before CJK text that follows without a space" begin
+    using Test
+    using DocstringTranslation: translate_documenter_page
+
+    # Japanese puts no space after a URL; the restored URL must not swallow it.
+    source = "See https://example.org/docs/#faces for details.\n"
+    translator = text -> replace(text, "See " => "", " for details." => "を参照してください。")
+    result = translate_documenter_page(source; translator)
+    @test occursin("https://example.org/docs/#facesを参照してください。", result)
+end
+
+@testitem "Short prose paragraphs may merge into a neighbouring sentence" begin
+    using Test
+    using DocstringTranslation: translate_documenter_page
+
+    # Word order can move a trailing fragment such as "in any shell." into the
+    # sentence before a code block; that is not a structural change.
+    source = """
+    Install it by executing
+
+    ```sh
+    install-it
+    ```
+
+    in any shell.
+
+    ```sh
+    verify-it
+    ```
+    """
+    translator =
+        text -> replace(
+            text,
+            "Install it by executing" => "任意のシェルで次を実行してインストールします。",
+            r"\n\nin any shell\.\n" => "\n",
+        )
+    result = translate_documenter_page(source; translator)
+    @test occursin("任意のシェルで", result)
+    @test occursin("install-it", result) && occursin("verify-it", result)
+    @test !occursin("in any shell", result)
+end
+
+@testitem "Stray backticks inside mis-parsed emphasis stay literal" begin
+    using Test, Markdown
+    using DocstringTranslation: translate_documenter_page
+
+    # Julia reads the intraword underscore in `bright_magenta` as emphasis that
+    # swallows the opening backtick of `julia_parentheses`; the backticks are
+    # then plain text. A translation that drops the broken emphasis must not
+    # turn them into a new code span.
+    source = "- `julia_x`: bright_magenta, inherits from `julia_parentheses`\n"
+    translator =
+        text -> replace(text, "bright*magenta" => "明るいマゼンタ", "inherits from" => "継承元")
+    result = translate_documenter_page(source; translator)
+    @test occursin("明るいマゼンタ", result)
+    item = only(only(Markdown.parse(result).content).items)
+    codes = [c.code for c in only(item).content if c isa Markdown.Code]
+    @test codes == ["julia_x"]
+end

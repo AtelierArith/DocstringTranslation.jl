@@ -31,7 +31,15 @@ function protect_inline(node, state)
 end
 
 function protect_node(node::AbstractString, state)
-    return replace(node, r"https?://[^\s<>\"]+" => url -> protect!(state, url, "URL"))
+    # Translated CJK text follows a URL without a space, so a URL also ends at
+    # the first non-ASCII character. A backtick left in text (e.g. swallowed by
+    # mis-parsed emphasis) is protected and restored escaped, so a translation
+    # cannot pair it into a new code span.
+    return replace(
+        node,
+        r"https?://[^\s<>\"`[:^ascii:]]+|`" =>
+            m -> m == "`" ? protect!(state, "\\`", "TICK") : protect!(state, m, "URL"),
+    )
 end
 function protect_node(node::Markdown.Paragraph, state)
     node.content = Any[protect_inline(c, state) for c in node.content]
@@ -109,7 +117,20 @@ function page_structure(value::AbstractVector, prefix::String)
         end
     end
     in_prose && push!(pieces, (:prose, Tuple(sort!(prose; by = repr))))
-    return Tuple(pieces)
+    return Tuple(without_bridging_prose(pieces))
+end
+# Word order may fold a short fragment that sits between two blocks (e.g. "in
+# any shell." after a code block) into the preceding sentence. Such prose has
+# no markers, so dropping it cannot move protected content; prose at the start
+# or end still anchors where blocks appear.
+isprose(piece) = piece isa Tuple && !isempty(piece) && first(piece) == :prose
+function without_bridging_prose(pieces)
+    keep = trues(length(pieces))
+    for i = 2:(length(pieces)-1)
+        pieces[i] == (:prose, ()) || continue
+        !isprose(pieces[i-1]) && !isprose(pieces[i+1]) && (keep[i] = false)
+    end
+    return pieces[keep]
 end
 function inline_structure(content, prefix::String)
     pieces = Any[]
