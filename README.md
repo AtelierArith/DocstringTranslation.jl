@@ -127,6 +127,72 @@ julia> @doc ℯ
 julia>
 ```
 
+## Translate documentation pages concurrently
+
+Before `Documenter.makedocs`, prepare translations with bounded asynchronous
+workers. This overlaps API wait time even with one Julia thread:
+
+```julia
+using DocstringTranslation
+using DotEnv
+DotEnv.load!() # load OPENAI_API_KEY from .env
+@switchlang! "ja"
+
+source = joinpath(@__DIR__, "src") # in docs/make.jl
+paths = [joinpath(dir, file) for (dir, _, files) in walkdir(source)
+         for file in files if endswith(file, ".md")]
+result = DocstringTranslation.translate_pages(paths; concurrency=32)
+for (path, err) in result.failed
+    @error "Page translation failed" path exception=err
+end
+isempty(result.failed) || error("Fix failed pages and rerun before building")
+# Documenter.makedocs(...)
+```
+
+`translated` and `cached` list successful absolute paths; `failed` pairs paths
+with exceptions. Completed pages stay cached, so rerunning resumes failed work.
+Repeated paths and symlinks are processed once within a batch. Whole-page
+Markdown protection and validation remain enabled. Use a lower `concurrency`
+if your provider limits simultaneous requests; the worker count does not impose
+a requests-per-minute limit. Configure the language, model, target package and
+cache root before starting, and keep them fixed until the batch completes.
+
+## Model fallback
+
+Validated page/docstring translation normally uses GPT-6 Luna. After up to three
+failed primary attempts, only that document is tried once with GPT-6.1 Sol
+(medium reasoning). `DocstringTranslation.switchfallbackmodel!(nothing)` disables
+escalation; set a model string to enable it. `switchmodel!` selects the primary.
+Successful cache entries remain reusable regardless of which model produced them.
+
+Custom request callbacks do not trigger automatic network escalation unless an
+explicit `fallback_request` is supplied. Diagnostics identify the model used in
+each attempt, and final errors retain both causes. `DOCSTRINGTRANSLATION_REQUEST_TIMEOUT_SECONDS`
+sets a positive integer HTTP read timeout (default 180 seconds). HTTP transport
+retries are disabled; validation retries and model escalation are explicit.
+
+## Translation failures and validation
+
+Validation allows natural word order, emphasis changes and regrouping adjacent
+prose paragraphs. Code, mathematics, links, headings and structural containers
+(list items, table cells, quotes and admonitions) remain protected.
+
+The `@switchlang!` hooks use pristine original Markdown when a translation fails,
+so a provider outage or invalid response does not stop a documentation build.
+Each failed source is reported once per process/configuration, and fallback text
+is never cached as a successful translation. Direct translation calls and
+`translate_pages` retain strict failure reporting.
+
+Inspect `DocstringTranslation.translation_failures()` for source identities and
+sanitized reasons. Call `DocstringTranslation.clear_translation_failures!()`
+between builds to retry failed sources in the same process. Starting a new Julia
+process also retries them. Concurrent requests for the same cache key share a lock.
+
+Set `DOCSTRINGTRANSLATION_DIAGNOSTICS_DIR` to retain validation failures as separate
+`original.md`, `protected.md`, `response.md` and `error.txt` diagnostic files.
+Errors report the source, first structural mismatch, attempt count and artifact
+directory. These diagnostic files are not successful translation cache entries.
+
 ## Appendix
 
 If you are using 1PassWord, `op` command is good for you. Store the following content instead of writing API key directly:

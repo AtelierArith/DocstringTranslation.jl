@@ -16,6 +16,10 @@ This macro performs the following operations:
 2. Overrides `Docs.parsedoc` to insert translation engine for individual docstrings
 3. Overrides `Documenter.Page` constructor to enable translation of entire documentation pages
 
+Translation failures produce a warning and fall back to pristine original Markdown;
+they never become translated cache entries. Inspect `DocstringTranslation.translation_failures()`
+and clear failures between builds with `DocstringTranslation.clear_translation_failures!()`.
+
 # Example
 ```julia
 @switchlang! "ja"  # Switch to Japanese translation
@@ -28,7 +32,7 @@ macro switchlang!(lang)
         )
     end
     @eval function Docs.parsedoc(d::DocStr)
-        translated_docstring(d)
+        translated_docstring(d; on_error = :fallback)
     end
 
     # Overrides Page constructor to hack Documenter to translate docstrings
@@ -44,26 +48,7 @@ macro switchlang!(lang)
         # CRFL line endings on Windows). To make sure that the docs are always built consistently,
         # we'll normalize the line endings when parsing Markdown files by removing all CR characters.
 
-        mdsrc = replace(read(source, String), '\r' => "")
-        mdpage = Markdown.parse(mdsrc)
-        begin # hack
-            target_package = DOCUMENTER_TARGET_PACKAGE[][:name]
-            mdpage.meta[:path] = abspath(source)
-            if !isabspath(source) && !(".." in splitpath(source))
-                mdpage.meta[:legacy_cache_path] =
-                    joinpath(target_package, first(splitext(source)))
-            end
-            mdpage.meta[:documenter_page_translation] = true
-            @debug "Documenter translation cache lookup" source cachedir=pathofcachedir(
-                mdpage,
-            ) hit=istranslated(mdpage)
-            mdpage = cached_translation(
-                mdpage;
-                translator = _ ->
-                    Markdown.parse(translate_documenter_page_with_openai(mdsrc)),
-            )
-            @debug "Translated" mdpage
-        end # hack
+        mdpage = translated_page(source; on_error = :fallback)
         mdast = try
             convert(Documenter.MarkdownAST.Node, mdpage)
         catch err
@@ -95,14 +80,17 @@ function translated_docstring(
     d::DocStr;
     translator = translate_docstring_with_openai,
     available::Bool = haskey(ENV, "OPENAI_API_KEY"),
+    on_error::Symbol = :throw,
 )
-    original = get!(d.data, :docstringtranslation_original) do
-        md = copy_markdown(d.object === nothing ? Docs.formatdoc(d) : d.object)
-        md.meta[:module] = d.data[:module]
-        md.meta[:path] = get(d.data, :path, "")
-        md.meta[:docstring_translation] = true
-        md
+    original = lock(TRANSLATION_STATE_LOCK) do
+        get!(d.data, :docstringtranslation_original) do
+            md = copy_markdown(d.object === nothing ? Docs.formatdoc(d) : d.object)
+            md.meta[:module] = d.data[:module]
+            md.meta[:path] = get(d.data, :path, "")
+            md.meta[:docstring_translation] = true
+            md
+        end
     end
-    d.object = cached_translation(original; translator, available)
+    d.object = cached_translation(original; translator, available, on_error)
     return d.object
 end

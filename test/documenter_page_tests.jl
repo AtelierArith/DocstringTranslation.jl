@@ -29,6 +29,16 @@
     @test_throws Exception translate_documenter_page(source; translator = _ -> "broken")
 end
 
+@testitem "Restored table code preserves escaped pipe operators" begin
+    using Test, Markdown
+    using DocstringTranslation: translate_documenter_page
+    for cell in ("`a \\| b`", "**`a \\| b`**", "`!read & write \\| truncate \\| append`")
+        source = "| Name | Default |\n|:---|:---|\n| open | $cell |\n"
+        result = translate_documenter_page(source; translator = identity)
+        @test string(Markdown.parse(result)) == string(Markdown.parse(source))
+    end
+end
+
 @testitem "Documenter page rejects corrupted structure" begin
     using Test
     using DocstringTranslation: translate_documenter_page
@@ -151,10 +161,16 @@ end
     using DocstringTranslation: translate_documenter_page
     source = "See [function `x`](https://example.org) and [function `x`](https://example.org).\n"
     requests = String[]
-    translator = text -> begin
-        push!(requests, text)
-        replace(text, "See" => "参照", "function" => "関数", "example.org" => "bad.test")
-    end
+    translator =
+        text -> begin
+            push!(requests, text)
+            replace(
+                text,
+                "See" => "参照",
+                "function" => "関数",
+                "example.org" => "bad.test",
+            )
+        end
     result = translate_documenter_page(source; translator)
     @test occursin("参照", result)
     @test count("[function `x`](https://example.org)", result) == 2
