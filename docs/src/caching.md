@@ -83,3 +83,35 @@ To change the cache directory for translation results, use the following functio
 ```julia
 switchtranslationcachedir!("path/to/cache/directory")
 ```
+
+## Language aliases and cache compatibility
+
+Known language names and codes are case-insensitive. The supported pairs are
+English/en, Japanese/ja, German/de, French/fr, Spanish/es, Italian/it,
+Portuguese/pt, Chinese/zh, Korean/ko, Russian/ru, Arabic/ar, and Hindi/hi.
+For example, `@switchlang! :Japanese`, `@switchlang! :ja`, and
+`@switchlang! "JA"` select the same translation cache.
+
+Other language names remain valid prompt targets. Names containing path
+separators or reserved filenames are encoded before use as filenames.
+Compatible caches saved under language-name aliases remain readable; new
+translations use canonical language codes.
+
+Each docstring retains its original Markdown, so switching languages or cache
+directories also updates docstrings that have already been displayed. With no
+API key, a compatible cached translation is used when available; otherwise the
+original is returned. This also applies to Documenter pages.
+
+Docstrings now use a new hash namespace because earlier translations could
+change link labels. These incompatible translations are regenerated when a key
+is available. Page translations retain the v5 namespace. Safe legacy relative page
+cache paths remain readable. Pages now use a hash of the canonical absolute
+source path beneath
+`<package>/<major.minor>/pages/`, so relative and absolute paths to the same file share a cache, while older
+unsafe locations are not read.
+Modules without a package version use the running Julia version.
+
+Lookup checks the current and previous minor version for a compatible file,
+even when the current directory already exists. Metadata is restored after
+cache loading. Failed or empty translations never produce a completed cache
+file, and successful writes replace files atomically.

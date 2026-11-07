@@ -30,7 +30,11 @@ Please refer to the `DocstringTranslation.jl/src/switchlang.jl` file if you want
    - Each documentation string is translated
    - Translation results are cached and reused in subsequent generations
 
-### Documenter pages
+### Documenter pages and docstrings
+
+Each docstring uses the same protected translation and cache flow as pages.
+The pristine docstring is retained so subsequent language changes always start
+from its original content.
 
 A Documenter Markdown page is sent to the translation service as one request,
 so the service can use the surrounding page as context. Headings, code blocks,
