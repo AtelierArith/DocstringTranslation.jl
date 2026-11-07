@@ -34,8 +34,9 @@ Please refer to the `DocstringTranslation.jl/src/switchlang.jl` file if you want
 
 A Documenter Markdown page is sent to the translation service as one request,
 so the service can use the surrounding page as context. Headings, code blocks,
-inline code, mathematical expressions, and link destinations are protected by
-placeholders. Link text and table prose remain available for translation.
+inline code, mathematical expressions, and complete links (including their
+display text and destinations) are protected by placeholders. Table prose and
+other unprotected text remain available for translation.
 
 Before saving a translation, the package checks the placeholders and Markdown
 structure. A response that loses or duplicates a placeholder, changes a link
