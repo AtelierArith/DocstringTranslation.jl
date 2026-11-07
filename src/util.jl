@@ -20,10 +20,29 @@ source_block(node) = node
 source_block(node::Markdown.LaTeX) = Markdown.Code("math", node.formula)
 source_block(md::Markdown.MD) =
     Markdown.MD(Any[source_block(c) for c in md.content], copy(md.meta))
+# Markdown's printer indents every list continuation by four spaces, but its
+# parser reads an ordered item's content at the marker width ("1. " is three),
+# so fenced code inside ordered items does not survive a round trip.
+struct SourceList
+    list::Markdown.List
+end
+function Markdown.plain(io::IO, wrapper::SourceList)
+    list = wrapper.list
+    for (i, item) in enumerate(list.items)
+        marker = Markdown.isordered(list) ? "$(i + list.ordered - 1). " : "  * "
+        print(io, marker)
+        lines = split(rstrip(sprint(Markdown.plain, item)), "\n")
+        for (n, line) in enumerate(lines)
+            print(io, (n == 1 || isempty(line)) ? "" : " "^length(marker), line)
+            n < length(lines) && println(io)
+        end
+        println(io)
+    end
+end
 function source_block(node::Markdown.List)
     result = deepcopy(node)
     result.items = [Any[source_block(c) for c in item] for item in node.items]
-    return result
+    return SourceList(result)
 end
 function source_block(node::Union{Markdown.BlockQuote,Markdown.Admonition})
     result = deepcopy(node)

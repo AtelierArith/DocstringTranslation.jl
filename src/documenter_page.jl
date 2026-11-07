@@ -173,7 +173,7 @@ function restored_structure(source::AbstractString, prefix::String)
     md = Markdown.parse(source)
     state = PageProtection(prefix, String[], String[])
     md.content = Any[protect_block(node, state) for node in md.content]
-    canonical = string(md)
+    canonical = markdown_source(md)
     for (marker, original) in zip(state.markers, state.originals)
         kind = something(
             match(r"^([A-Z]+)\d+END$", marker[(length(prefix)+1):end]).captures[1],
@@ -219,7 +219,7 @@ function translate_documenter_page(
         throw(ArgumentError("Page contains a reserved translation marker"))
     state = PageProtection(prefix, String[], String[])
     md.content = Any[protect_block(node, state) for node in md.content]
-    protected = string(md)
+    protected = markdown_source(md)
     translated = translator(protected)
     translated isa AbstractString ||
         throw(ArgumentError("Page translator must return text"))
