@@ -67,7 +67,13 @@ function protect_node(node::Markdown.Table, state)
     for row in node.rows, i in eachindex(row)
         cell = row[i]
         content = cell isa AbstractVector ? cell : Any[cell]
+        first_marker = length(state.originals) + 1
         row[i] = Any[protect_inline(c, state) for c in content]
+        # Inline serialization occurs outside the table; restore the table's
+        # escape layer so bitwise | operators do not become cell separators.
+        for j = first_marker:length(state.originals)
+            state.originals[j] = replace(state.originals[j], "|" => "\\|")
+        end
     end
     return node
 end
@@ -85,7 +91,25 @@ function page_structure(value::AbstractString, prefix::String)
     return isempty(markers) ? nothing : markers
 end
 function page_structure(value::AbstractVector, prefix::String)
-    return Tuple(filter(!isnothing, [page_structure(item, prefix) for item in value]))
+    pieces = Any[]
+    prose = Any[]
+    in_prose = false
+    for item in value
+        signature = page_structure(item, prefix)
+        if item isa Markdown.Paragraph && first(signature) == :prose
+            append!(prose, signature[2])
+            in_prose = true
+        else
+            if in_prose
+                push!(pieces, (:prose, Tuple(sort!(prose; by = repr))))
+                empty!(prose)
+                in_prose = false
+            end
+            isnothing(signature) || push!(pieces, signature)
+        end
+    end
+    in_prose && push!(pieces, (:prose, Tuple(sort!(prose; by = repr))))
+    return Tuple(pieces)
 end
 function inline_structure(content, prefix::String)
     pieces = Any[]
@@ -102,15 +126,24 @@ function inline_structure(content, prefix::String)
             push!(pieces, (:link, page_structure(node.url, prefix)))
             append!(pieces, inline_structure(node.text, prefix))
         elseif node isa Union{Markdown.Bold,Markdown.Italic}
-            push!(pieces, (typeof(node), inline_structure(node.text, prefix)))
+            # Emphasis can move or disappear when a sentence is rephrased.
+            append!(pieces, inline_structure(node.text, prefix))
         else
             push!(pieces, page_structure(node, prefix))
         end
     end
     return Tuple(sort!(pieces; by = repr))
 end
-page_structure(node::Markdown.Paragraph, prefix::String) =
-    (:paragraph, inline_structure(node.content, prefix))
+function page_structure(node::Markdown.Paragraph, prefix::String)
+    signature = inline_structure(node.content, prefix)
+    blocks = filter(signature) do piece
+        piece isa Tuple &&
+            length(piece) == 2 &&
+            piece[1] == :marker &&
+            startswith(piece[2], prefix * "BLOCK")
+    end
+    return isempty(blocks) ? (:prose, signature) : (:protected_block, signature)
+end
 function page_structure(node::Markdown.Table, prefix::String)
     rows = Tuple(
         Tuple(
@@ -142,16 +175,44 @@ function restored_structure(source::AbstractString, prefix::String)
     md.content = Any[protect_block(node, state) for node in md.content]
     canonical = string(md)
     for (marker, original) in zip(state.markers, state.originals)
-        kind = match(r"[A-Z]+(?=\d+END$)", marker).match
+        kind = something(
+            match(r"^([A-Z]+)\d+END$", marker[(length(prefix)+1):end]).captures[1],
+        )
         digest = sha256(kind * original)
         digits = join(lpad(string(byte), 3, '0') for byte in digest)
-        canonical = replace(canonical, marker => prefix * "VALUE" * digits * "END")
+        canonical = replace(canonical, marker => prefix * kind * "VALUE" * digits * "END")
     end
     return page_structure(Markdown.parse(canonical), prefix)
 end
 
 """Translate a complete Documenter page using `translator` and restore protected syntax."""
-function translate_documenter_page(source::AbstractString; translator)
+function structure_difference(expected, actual, path = "document")
+    expected == actual && return nothing
+    if expected isa Tuple && actual isa Tuple
+        for i = 1:min(length(expected), length(actual))
+            difference = structure_difference(expected[i], actual[i], "$path[$i]")
+            isnothing(difference) || return difference
+        end
+        return "$path: expected $(length(expected)) entries, got $(length(actual))"
+    end
+    # Signatures contain structure and opaque markers, never the original prose.
+    return "$path: expected $(repr(expected)), got $(repr(actual))"
+end
+
+function check_structure(expected, actual, source_label, stage)
+    difference = structure_difference(expected, actual)
+    isnothing(difference) || throw(
+        ArgumentError(
+            "Translation validation failed for $source_label ($stage): $difference",
+        ),
+    )
+end
+
+function translate_documenter_page(
+    source::AbstractString;
+    translator,
+    source_label::AbstractString = "Markdown input",
+)
     md = Markdown.parse(source)
     prefix = "DTPROTECTED" * uppercase(bytes2hex(sha256(source))[1:16]) * "X"
     occursin(prefix, source) &&
@@ -165,7 +226,9 @@ function translate_documenter_page(source::AbstractString; translator)
     isempty(strip(translated)) && throw(ArgumentError("Page translation is empty"))
     for marker in state.markers
         length(collect(eachmatch(Regex(marker), translated))) == 1 || throw(
-            ArgumentError("Page translation lost or duplicated protected marker $marker"),
+            ArgumentError(
+                "$source_label: protected marker $marker must occur exactly once; got $(length(collect(eachmatch(Regex(marker), translated))))",
+            ),
         )
     end
     # Block markers must occupy a line by themselves, apart from container prefixes.
@@ -177,16 +240,20 @@ function translate_documenter_page(source::AbstractString; translator)
             "[ \t]*\$",
         )
         occursin(line, translated) || throw(
-            ArgumentError("Protected block marker $marker was joined to other content"),
+            ArgumentError(
+                "$source_label: protected block $marker must occupy its own line",
+            ),
         )
     end
     # Reject invented markers as well as altered marker fragments.
     markers = collect(eachmatch(Regex(prefix * raw"[A-Z]+\d+END"), translated))
     length(markers) == length(state.originals) ||
         throw(ArgumentError("Page translation contains invalid protected markers"))
-    page_structure(Markdown.parse(protected), prefix) ==
-    page_structure(Markdown.parse(translated), prefix) || throw(
-        ArgumentError("Page translation changed Markdown structure or marker placement"),
+    check_structure(
+        page_structure(Markdown.parse(protected), prefix),
+        page_structure(Markdown.parse(translated), prefix),
+        source_label,
+        "protected response",
     )
     result = String(translated)
     for (marker, original) in zip(state.markers, state.originals)
@@ -207,8 +274,11 @@ function translate_documenter_page(source::AbstractString; translator)
         end
         result = replace(result, marker => original)
     end
-    restored_structure(source, prefix) == restored_structure(result, prefix) || throw(
-        ArgumentError("Restored page does not preserve the original Markdown structure"),
+    check_structure(
+        restored_structure(source, prefix),
+        restored_structure(result, prefix),
+        source_label,
+        "restored Markdown",
     )
     return result
 end

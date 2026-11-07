@@ -24,9 +24,12 @@ end
 
 include("languages.jl")
 include("util.jl")
+include("failures.jl")
 include("scratchspace.jl")
 include("openai.jl")
+include("model_fallback.jl")
 include("documenter_page.jl")
+include("batch.jl")
 
 include("switchlang.jl")
 export @switchlang!

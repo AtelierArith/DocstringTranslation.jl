@@ -424,6 +424,32 @@ ja: 翻訳結果が事前に用意されていれば　`julia` と同階層に `
 en: If you have pre-prepared translation results, place the `translation` directory at the same level as `julia`.
 If you don't have them ready, prepare an OpenAI API key and set it as the environment variable `OPENAI_API_KEY`.
 
+### Translate many pages concurrently
+
+For large documentation trees, run `DocstringTranslation.translate_pages` after
+the source pages have been copied or generated, and before `makedocs`. Set the
+same language, target package and translation cache directory as the build.
+Load your API key with `using DotEnv; DotEnv.load!("/path/to/.env")` first.
+
+```julia
+source = joinpath(@__DIR__, "src")
+paths = [joinpath(dir, file) for (dir, _, files) in walkdir(source)
+         for file in files if endswith(file, ".md")]
+result = DocstringTranslation.translate_pages(paths; concurrency=32)
+for (path, err) in result.failed
+    @error "Page translation failed" path exception=err
+end
+isempty(result.failed) || error("Some pages need another translation attempt")
+```
+
+By default, 32 asynchronous workers overlap page requests even with one Julia thread.
+The limit is configurable and applies to each batch. Unlike the earlier
+paragraph-level threaded translator, each page retains whole-document Markdown
+protection and validation. Cached pages are skipped; failed pages do not discard
+successful translations. Rerun to resume, then let Documenter consume the cache.
+This API pretranslates page files; docstring translation still uses the normal
+`@switchlang!` hook. Do not change language/model/cache configuration during a batch.
+
 ### Build translated Julia documentation
 
 Just run the following command:
