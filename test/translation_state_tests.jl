@@ -22,7 +22,10 @@
             push!(paths, D.pathofcachedir(md))
             @test !startswith(relpath(last(paths), dir), "..")
         end
-        @test length(unique(paths)) == 4
+        # Machine-specific locations share a portable directory; entries inside
+        # it are distinguished by the content hash rather than by the path.
+        @test paths[2] == paths[3] == paths[4] != paths[1]
+        @test D.hashmd(Markdown.parse("Hello")) != D.hashmd(Markdown.parse("Bye"))
         md = Markdown.parse("Hello")
         md.meta[:module] = Main
         D.cache_translation(D.hashmd(md), md)
