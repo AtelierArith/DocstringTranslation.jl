@@ -215,35 +215,29 @@ end
     end
 end
 
-@testitem "Older symlink cache basenames remain readable" begin
-    using Test, Markdown, SHA, DocstringTranslation
+@testitem "Page caches are portable across checkout locations" begin
+    using Test, DocstringTranslation
     D = DocstringTranslation
     mktempdir() do dir
-        cache = joinpath(dir, "cache")
-        D.switchtranslationcachedir!(cache)
+        D.switchtranslationcachedir!(joinpath(dir, "cache"))
         D.DOCUMENTER_TARGET_PACKAGE[] = Dict(:name => "Fixture", :version => v"1.0.0")
         D._switchlang!("ja")
-        path = joinpath(dir, "real.md")
-        alias = joinpath(dir, "alias.md")
-        write(path, "Hello.\n")
-        symlink(path, alias)
-        md = Markdown.parse("Hello.\n")
-        md.meta[:path] = alias
-        md.meta[:documenter_page_translation] = true
-        olddir = joinpath(
-            cache,
-            "Fixture",
-            "1.0",
-            "pages",
-            bytes2hex(sha256(realpath(path))),
-            "alias.md",
-            D.hashmd(md),
-        )
-        mkpath(olddir)
-        write(joinpath(olddir, "ja.md"), "こんにちは。\n")
-        @test occursin("こんにちは", string(D.translated_page(alias; available = false)))
-        result = D.translate_pages([alias, path]; available = false)
-        @test result.cached == [alias]
-        @test occursin("こんにちは", string(D.translated_page(path; available = false)))
+        # The same documentation checked out on a developer machine and on CI.
+        local_page = joinpath(dir, "Users", "dev", "repo", "doc", "src", "index.md")
+        ci_page = joinpath(dir, "home", "runner", "repo", "doc", "src", "index.md")
+        for page in (local_page, ci_page)
+            mkpath(dirname(page))
+            write(page, "# Heading\n\nHello.\n")
+        end
+        request = (text, _) -> replace(text, "Hello" => "こんにちは")
+        @test D.translate_pages([local_page]; request, available = true).translated ==
+              [local_page]
+
+        result = D.translate_pages([ci_page]; available = false)
+        @test result.cached == [ci_page]
+        @test isempty(result.failed)
+        md = D.translated_page(ci_page; available = false)
+        @test occursin("こんにちは", string(md))
+        @test md.meta[:path] == ci_page
     end
 end

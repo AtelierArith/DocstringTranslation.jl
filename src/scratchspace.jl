@@ -41,6 +41,8 @@ function cache_component(value::AbstractString)
     return "encoded-" * bytes2hex(codeunits(value))
 end
 
+isnonportable(source::AbstractString) = isabspath(source) || ".." in splitpath(source)
+
 function cache_parts(md::Markdown.MD)
     if haskey(md.meta, :module)
         mod = md.meta[:module]
@@ -49,15 +51,10 @@ function cache_parts(md::Markdown.MD)
     elseif haskey(md.meta, :path)
         source = String(md.meta[:path])
         version = something(DOCUMENTER_TARGET_PACKAGE[][:version], VERSION)
-        if isabspath(source) || ".." in splitpath(source)
-            # The full normalized source identity prevents basename collisions.
-            canonical_source = ispath(source) ? realpath(source) : abspath(source)
-            parts = [
-                cache_component(DOCUMENTER_TARGET_PACKAGE[][:name]),
-                "pages",
-                bytes2hex(sha256(canonical_source)),
-                cache_component(basename(canonical_source)),
-            ]
+        if isnonportable(source)
+            # Absolute paths differ between checkouts (e.g. a laptop and CI), so
+            # such pages share one directory and are identified by content hash.
+            parts = [cache_component(DOCUMENTER_TARGET_PACKAGE[][:name]), "page-content"]
         else
             parts = cache_component.(splitpath(normpath(source)))
             isempty(parts) && throw(ArgumentError("Empty page cache path"))
@@ -71,7 +68,8 @@ end
     pathofcachedir(md::Markdown.MD, allowold::Bool=false)
 
 Return a cache directory inside the configured root. Unversioned modules use
-the Julia version. Absolute and parent-relative page paths use a source hash.
+the Julia version. Absolute and parent-relative page paths share a portable
+directory and are distinguished by content hash.
 """
 function pathofcachedir(md::Markdown.MD, allowold::Bool = false)
     parts, version = cache_parts(md)
@@ -93,28 +91,6 @@ function translation_file(md::Markdown.MD)
         joinpath(TRANSLATION_CACHE_DIR[], insertversion(parts, v)..., hashmd(md)) for
         v in (version, prevminor(version))
     ]
-    # Earlier caches combined the canonical path hash with the alias's basename.
-    # Continue reading those entries after canonicalizing symlink cache identity.
-    source = get(md.meta, :path, nothing)
-    if !haskey(md.meta, :module) &&
-       source isa AbstractString &&
-       (isabspath(source) || ".." in splitpath(source))
-        old_basename = cache_component(basename(normpath(source)))
-        if old_basename != last(parts)
-            old_parts = copy(parts)
-            old_parts[end] = old_basename
-            append!(
-                directories,
-                [
-                    joinpath(
-                        TRANSLATION_CACHE_DIR[],
-                        insertversion(old_parts, v)...,
-                        hashmd(md),
-                    ) for v in (version, prevminor(version))
-                ],
-            )
-        end
-    end
     legacy = get(md.meta, :legacy_cache_path, nothing)
     if legacy isa AbstractString && !isabspath(legacy) && !(".." in splitpath(legacy))
         legacy_parts = cache_component.(splitpath(normpath(legacy)))
