@@ -43,7 +43,8 @@ You must strictly follow the rules below.
 - Markers containing CODE represent code or mathematics; keep them in their original paragraph or table cell.
 - Markers containing BLOCK represent complete blocks; keep each in its original position.
 - Preserve all Markdown structure, including tables, links, and paragraphs.
-- Translate link display text and table prose.
+- Markers containing LINK represent complete links, including their display text; preserve them unchanged.
+- Translate table prose and other unprotected text.
 - Return only the resulting Markdown text, without a surrounding code fence.
 """
 end

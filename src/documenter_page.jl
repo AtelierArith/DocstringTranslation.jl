@@ -38,10 +38,7 @@ function protect_node(node::Markdown.Paragraph, state)
     return node
 end
 function protect_node(node::Markdown.Link, state)
-    text = node.text isa AbstractString ? Any[node.text] : node.text
-    node.text = Any[protect_inline(c, state) for c in text]
-    node.url = protect!(state, node.url, "URL")
-    return node
+    return protect!(state, markdown_inline(node), "LINK")
 end
 function protect_node(node::Markdown.Image, state)
     node.url = protect!(state, node.url, "URL")

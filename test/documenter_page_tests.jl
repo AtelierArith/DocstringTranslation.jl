@@ -22,8 +22,8 @@
     result = translate_documenter_page(source; translator)
     @test length(requests) == 1
     @test occursin("# Original heading", result)
-    @test occursin("こんにちは [世界](https://example.org/a_(b))", result)
-    @test occursin("[節](@ref target)", result)
+    @test occursin("こんにちは [world](https://example.org/a_(b))", result)
+    @test occursin("[the section](@ref target)", result)
     @test occursin("println(\"Hello\")", result)
     @test !occursin("println(\"Hello\")", only(requests))
     @test_throws Exception translate_documenter_page(source; translator = _ -> "broken")
@@ -35,7 +35,7 @@ end
     source = "# Title\n\nHello [world](https://example.org).\n"
     @test_throws ArgumentError translate_documenter_page(
         source;
-        translator = s -> replace(s, "[" => ""),
+        translator = s -> replace(s, "Hello" => "# Hello"),
     )
 end
 
@@ -67,19 +67,6 @@ end
     @test_throws ArgumentError translate_documenter_page(source; translator = _ -> "Text.")
     @test_throws ArgumentError translate_documenter_page(source; translator = s -> s * s)
     @test_throws ArgumentError translate_documenter_page(source; translator = _ -> "  ")
-end
-
-@testitem "Inline elements may move within a table cell" begin
-    using Test
-    using DocstringTranslation: translate_documenter_page
-    source = "| Name | Description |\n|:---|:---|\n| `f` | [function](https://example.org) at `x` |\n"
-    translator =
-        s -> replace(
-            s,
-            r"(\[function\]\([^)]*\)) at (DTPROTECTED[A-Z0-9]+END)" => s"\2 における\1",
-        )
-    result = translate_documenter_page(source; translator)
-    @test occursin("`x` における[function](https://example.org)", result)
 end
 
 @testitem "Invalid page output is retried without caching" begin
@@ -159,30 +146,20 @@ end
     end
 end
 
-@testitem "Protected code can move out of link text within a cell" begin
+@testitem "Complete links including nested markup are protected" begin
     using Test
     using DocstringTranslation: translate_documenter_page
-    source = "| Name | Description |\n|:---|:---|\n| item | [function `x`](https://example.org) |\n"
-    translator =
-        s -> replace(
-            s,
-            r"\[function (DTPROTECTED[A-Z0-9]+END)\](\(DTPROTECTED[A-Z0-9]+END\))" =>
-                s"\1 における[function]\2",
-        )
-    result = translate_documenter_page(source; translator)
-    @test occursin("`x` における[function](https://example.org)", result)
-end
-
-@testitem "Link destinations cannot be exchanged for inline code" begin
-    using Test
-    using DocstringTranslation: translate_documenter_page
-    source = "See [function `x`](https://example.org).\n"
-    translator = function (text)
-        code = only(m.match for m in eachmatch(r"DTPROTECTED[A-Z0-9]+XCODE\d+END", text))
-        url = only(m.match for m in eachmatch(r"DTPROTECTED[A-Z0-9]+XURL\d+END", text))
-        return replace(text, code => url, url => code)
+    source = "See [function `x`](https://example.org) and [function `x`](https://example.org).\n"
+    requests = String[]
+    translator = text -> begin
+        push!(requests, text)
+        replace(text, "See" => "参照", "function" => "関数", "example.org" => "bad.test")
     end
-    @test_throws ArgumentError translate_documenter_page(source; translator)
+    result = translate_documenter_page(source; translator)
+    @test occursin("参照", result)
+    @test count("[function `x`](https://example.org)", result) == 2
+    @test !occursin("function", only(requests))
+    @test !occursin("example.org", only(requests))
 end
 
 @testitem "Protected blocks cannot be joined to prose" begin
