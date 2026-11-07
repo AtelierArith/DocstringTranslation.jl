@@ -29,3 +29,20 @@ Please refer to the `DocstringTranslation.jl/src/switchlang.jl` file if you want
 2. During documentation generation:
    - Each documentation string is translated
    - Translation results are cached and reused in subsequent generations
+
+### Documenter pages
+
+A Documenter Markdown page is sent to the translation service as one request,
+so the service can use the surrounding page as context. Headings, code blocks,
+inline code, mathematical expressions, and link destinations are protected by
+placeholders. Link text and table prose remain available for translation.
+
+Before saving a translation, the package checks the placeholders and Markdown
+structure. A response that loses or duplicates a placeholder, changes a link
+or moves protected content to a different paragraph or table cell is rejected.
+Invalid page responses are retried up to three times; if validation still fails,
+the build stops and no completed translation is cached. Pages that exceed the
+model's input or output limits also fail rather than caching partial results.
+Some Markdown node types are not yet supported and cause a clear error instead
+of being translated unsafely. Cached pages from the previous paragraph-based
+implementation are not reused.

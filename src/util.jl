@@ -1,5 +1,5 @@
 function hashmd(md::Markdown.MD)::String
-    return bytes2hex(sha256(string(md)))
+    return bytes2hex(sha256((get(md.meta, :documenter_page_translation, false) ? "documenter-page-v4:" : "") * string(md)))
 end
 
 function postprocess_content(content::AbstractString)

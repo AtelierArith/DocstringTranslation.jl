@@ -76,12 +76,16 @@ macro switchlang!(lang)
         begin # hack
             target_package = DOCUMENTER_TARGET_PACKAGE[][:name]
             mdpage.meta[:path] = joinpath(target_package, first(splitext(source)))
+            mdpage.meta[:documenter_page_translation] = true
             cache_original(mdpage)
             @debug "Translating ..." mdpage
             mdhash_original = hashmd(mdpage)
             if !istranslated(mdpage)
                 # Update mdpage object
-                mdpage = translate_md!(mdpage)
+                translated_source = translate_documenter_page_with_openai(mdsrc)
+                translated_page = Markdown.parse(translated_source)
+                merge!(translated_page.meta, mdpage.meta)
+                mdpage = translated_page
                 cache_translation(mdhash_original, mdpage)
             else
                 mdpage = load_translation(mdpage)

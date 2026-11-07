@@ -38,9 +38,13 @@ Translate the Markdown content or text I'll paste later into $(lang).
 You must strictly follow the rules below.
 
 - Do not alter the Markdown formatting.
-- Skip changing words in the form of `[xxx](@ref)` or `[xxx](@ref yyy)`.
-- Do not change any URL.
-- Return only the resulting text.
+- Preserve every marker beginning with DTPROTECTED exactly once.
+- A marker containing URL identifies a URL: never exchange it with another marker; if it is a link destination, keep it in that link destination.
+- Markers containing CODE represent code or mathematics; keep them in their original paragraph or table cell.
+- Markers containing BLOCK represent complete blocks; keep each in its original position.
+- Preserve all Markdown structure, including tables, links, and paragraphs.
+- Translate link display text and table prose.
+- Return only the resulting Markdown text, without a surrounding code fence.
 """
 end
 
@@ -53,6 +57,7 @@ function translate_with_openai(
     lang::String = default_lang(),
     model::String = default_model(),
     system_promptfn = default_docstring_system_promptfn,
+    raw::Bool = false,
 )
     provider = OpenAI.OpenAIProvider(
         api_key=ENV["OPENAI_API_KEY"],
@@ -69,9 +74,12 @@ function translate_with_openai(
             reasoning_effort = "none",
             temperature = 0,
         )
-        content = c.response[:choices][begin][:message][:content]
-        content = postprocess_content(content)
-        return Markdown.parse(content)
+        choice = c.response[:choices][begin]
+        get(choice, :finish_reason, nothing) == "stop" ||
+            error("Translation did not finish successfully: $(get(choice, :finish_reason, nothing))")
+        content = choice[:message][:content]
+        content isa AbstractString && !isempty(strip(content)) || error("Translation returned empty content")
+        return raw ? content : Markdown.parse(postprocess_content(content))
     catch e
         error_msg = string(e)
         # Check for 401 Unauthorized errors
@@ -81,7 +89,7 @@ function translate_with_openai(
 
             Possible causes:
             1. The OPENAI_API_KEY is invalid or expired
-            2. The API key is not valid for the endpoint: $(ENV["OPENAI_BASE_URL_OVERRIDE"])
+            2. The API key is not valid for the endpoint: $(get(ENV, "OPENAI_BASE_URL_OVERRIDE", "https://api.openai.com/v1"))
             3. The API key format is incorrect
             4. The API key was not loaded from .env file
 
@@ -99,94 +107,28 @@ function translate_with_openai(
     end
 end
 
-function _create_hex(l::Markdown.Link)
-    (bytes2hex(codeunits(join(l.text))) * "_" * bytes2hex(codeunits(l.url)))
-end
 
-function _translate!(p::Markdown.Paragraph)
-    hex2link = Dict()
-    link2hex = Dict()
-    content = map(p.content) do c
-        # Protect Link so that it does not break during translation
-        if c isa Markdown.Link
-            h = _create_hex(c)
-            hex2link[string(h)] = c
-            link2hex[c] = h
-            "`" * h * "`"
-        else
-            c
-        end
-    end
-    p_orig = deepcopy(p)
-    p.content = content
-    result = translate_documenter_md_with_openai(Markdown.MD(p))
-    try
-        translated_content = map(result[1].content) do c
-            if c isa Markdown.Code
-                if isempty(c.language)
-                    if c.code in keys(hex2link)
-                        _c = hex2link[c.code]
-                        delete!(hex2link, c.code)
-                        c = _c
-                        c
-                    else
-                        c
-                    end
-                else
-                    c
-                end
-            else
-                c
+# Retry only invalid page output; never save a response that failed validation.
+page_openai_request(text, prompt) = translate_with_openai(text; system_promptfn = prompt, raw = true)
+
+function translate_documenter_page_with_openai(source::AbstractString; max_attempts::Int = 3, request = page_openai_request)
+    feedback = ""
+    for attempt in 1:max_attempts
+        requested = Ref(false)
+        try
+            return translate_documenter_page(source; translator = text -> begin
+                prompt = lang -> default_documenter_md_system_promptfn(lang) * feedback
+                response = request(text, prompt)
+                requested[] = true
+                response
+            end)
+        catch err
+            if !(err isa ArgumentError && requested[] && attempt < max_attempts)
+                rethrow()
             end
-        end
-        if isempty(hex2link)
-            p.content = translated_content
-        else
-            @warn "Failed to translate by hex2link. Fallback to original content"
-            p.content = p_orig.content
-        end
-    catch e
-        @warn "Failed to translate by $(e)" p
-        p.content = p_orig.content
-    end
-    nothing
-end
-
-function _translate!(list::Markdown.List)
-    for item in list.items
-        Base.Threads.@threads for i in item
-            _translate!(i)
+            @warn "Documenter page translation failed validation; retrying" attempt exception = err
+            feedback *= "\nAn earlier translation failed validation: $(sprint(showerror, err)). Preserve all markers in their original paragraph, table cell, and link destination.\n"
         end
     end
-end
-
-function _translate!(c)
-    if hasproperty(c, :content)
-        Base.Threads.@threads for c in c.content
-            _translate!(c)
-        end
-    end
-    c
-end
-
-"""
-    translate_md!(md::Markdown.MD)
-
-Translate a Markdown document in-place using OpenAI translation.
-
-# Arguments
-- `md::Markdown.MD`: The Markdown document to translate
-
-# Returns
-The translated Markdown document (same object as input)
-
-# Details
-Recursively translates all content in the Markdown document using multiple threads.
-Translation is done in-place, modifying the original document.
-"""
-function translate_md!(md::Markdown.MD)
-    Base.Threads.@threads for c in md.content
-        _translate!(c)
-    end
-    md
+    error("Page translation attempts exhausted")
 end
